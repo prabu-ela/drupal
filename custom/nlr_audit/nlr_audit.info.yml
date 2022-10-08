@@ -1,0 +1,10 @@
+name: Nlr Audit History
+description: Create audit history
+package: Custom
+type: module
+dependencies:
+  - drupal:shortcut
+core: 8.x
+core_version_requirement: ^8 || ^9
+
+#hidden: true

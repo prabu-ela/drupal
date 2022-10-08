@@ -1,0 +1,10 @@
+nlr_audit.css:
+  version: 1.0
+  css:
+    theme:
+      css/nlr_audit.css: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+

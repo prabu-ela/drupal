@@ -1,0 +1,192 @@
+<?php
+
+/**
+ * @file
+ * Provide XML feed for article content type.
+ */
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function nlr_xml_feed_preprocess_views_view_rss(&$variables) {
+
+  $view = $variables['view'];
+  $id = $view->storage->id();
+  $variables['id'] = $id;
+  $variables['display_id'] = $view->current_display;
+  global $base_url;
+
+  // Get the url of the request for displayed on the browser.
+  $path = \Drupal::service('path.current')->getPath();
+  $current_path = \Drupal::service('path_alias.manager')->getAliasByPath($path);
+  $fullUrl = $base_url . $current_path;
+
+  $variables['fullpath'] = $fullUrl;
+  $variables['basepath'] = $base_url;
+  $variables['currentpath'] = $current_path;
+
+  if ($id == 'recent_contributors' && $variables['display_id'] == 'feed_3') {
+
+    // Rendeing all the details.
+    $item = $variables['rows'];
+    $variables['result'] = [];
+
+    $article_by = '<div class="view-header"><h3>Article By</h3></div>';
+    $j = 0;
+    foreach ($item as $value) {
+      $author_by = '';
+      // First Author.
+      if (!empty($value['#row']->description['#node']->field_author)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_author->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_author->entity->title->value . '</a></div>';
+      }
+
+      // Second Author.
+      if (!empty($value['#row']->description['#node']->field_author_2->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_author_2->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_author_2->entity->title->value . '</a></div>';
+      }
+
+      // First contributor.
+      if (!empty($value['#row']->description['#node']->field_sub_contrib->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_sub_contrib->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_sub_contrib->entity->title->value . '</a></div>';
+      }
+
+      // Second contributor.
+      if (!empty($value['#row']->description['#node']->field_contributor_2->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_contributor_2->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_contributor_2->entity->title->value . '</a></div>';
+      }
+
+      // Third contributor.
+      if (!empty($value['#row']->description['#node']->field_contributor_3->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_contributor_3->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_contributor_3->entity->title->value . '</a></div>';
+      }
+
+      // Fourth contributor.
+      if (!empty($value['#row']->description['#node']->field_contributor_4->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_contributor_4->target_id, 'en');
+        $author_by .= '<div><a href="' . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_contributor_4->entity->title->value . '</a></div>';
+      }
+
+      // Organisation data.
+      $organisation = '';
+      if (!empty($value['#row']->description['#node']->field_org_org_info->target_id != 0)) {
+        $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $value['#row']->description['#node']->field_org_org_info->target_id, 'en');
+        $organisation = '<p><a href="' . $base_url . $url_alias . '" target="_blank">' . $value['#row']->description['#node']->field_org_org_info->entity->title->value . '</a></p>';
+      }
+
+      // Source of Article.
+      $articleSource = '';
+      if (!empty($value['#row']->description['#node']->field_article_source->target_id != 0)) {
+        $articleSource = $value['#row']->description['#node']->field_article_source->entity->title->value; 
+      }
+
+      // Copyright data.
+      $copyright = '';
+      if (empty($value['#row']->description['#node']->field_copyright->value)) {
+        $copyright = '<p>' . $value['#row']->description['#node']->field_org_org_info->entity->field_org_copyright->value . '</p>';
+      }
+      else {
+        $copyright = '<p>' . $value['#row']->description['#node']->field_copyright->value . '</p>';
+      }
+
+      // Appending the body.
+      $body = '';
+      if (!empty($value['#row']->description['#node']->body->value)) {
+        $body = $value['#row']->description['#node']->body->value;
+      }
+
+      // Categories.
+      $domain1 = [];
+      $domain2 = [];
+
+      // Type of Law.
+      foreach ($value['#row']->description['#node']->field_type_of_law as $data) {
+        $term_url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/taxonomy/term/' . $data->target_id, 'en');
+        $term_name = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($data->target_id);
+        if (!empty($term_name)) {
+          $name = $term_name->label();
+        }
+        $domain1[$j]['name'] = $name;
+        $domain1[$j]['url'] = $base_url . $term_url_alias;
+      }
+
+      // Jurisdiction.
+      $data = $name = $term_url_alias = $term_name = '';
+      if (!empty($value['#row']->description['#node']->field_jurisdiction->target_id)) {
+        foreach ($value['#row']->description['#node']->field_jurisdiction as $data) {
+          $term_url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/taxonomy/term/' . $data->target_id, 'en');
+          $term_name = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($data->target_id);
+          if (!empty($term_name)) {
+            $name = $term_name->label();
+          }
+          $domain2[$j]['name'] = $name;
+          $domain2[$j]['url'] = $base_url . $term_url_alias;
+        }
+      }
+      $variables['result'][$j]['description'] = $article_by . $author_by . $organisation . $articleSource . $body . $copyright;
+      $variables['result'][$j]['title'] = $value['#row']->title;
+      $variables['result'][$j]['link'] = $value['#row']->link;
+      $variables['result'][$j]['guid'] = $value['#row']->nid;
+      $variables['result'][$j]['created'] = date('D, d M Y H:s:i O', $value['#row']->description['#node']->created->value);
+      $variables['result'][$j]['author'] = $value['#row']->description['#node']->uid->entity->name->value;
+      $variables['result'][$j]['cat1'] = $domain1;
+      $variables['result'][$j]['cat2'] = $domain2;
+      $j++;
+    }
+  }
+
+  // Recent Contributor Feed.
+  if ($id = 'recent_contributors' && $variables['display_id'] == 'feed_2') {
+    // Rendeing all the details.
+    $item = '';
+    $item = $variables['rows'];
+    $variables['result'] = [];
+
+    $j = 0;
+    foreach ($item as $value) {
+
+      // Categories.
+      $domain1 = [];
+      $domain2 = [];
+
+      // Type of Law.
+      foreach ($value['#row']->description['#node']->field_type_of_law as $data) {
+        $term_url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/taxonomy/term/' . $data->target_id, 'en');
+        $term_name = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($data->target_id);
+        if (!empty($term_name)) {
+          $name = $term_name->label();
+        }
+        $domain1[$j]['name'] = $name;
+        $domain1[$j]['url'] = $base_url . $term_url_alias;
+      }
+
+      // Jurisdiction.
+      $data = $name = $term_url_alias = $term_name = '';
+      if (!empty($value['#row']->description['#node']->field_jurisdiction->target_id)) {
+        foreach ($value['#row']->description['#node']->field_jurisdiction as $data) {
+          $term_url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/taxonomy/term/' . $data->target_id, 'en');
+          $term_name = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($data->target_id);
+          if (!empty($term_name)) {
+            $name = $term_name->label();
+          }
+          $domain2[$j]['name'] = $name;
+          $domain2[$j]['url'] = $base_url . $term_url_alias;
+        }
+      }
+
+      $variables['result'][$j]['title'] = $value['#row']->title;
+      $variables['result'][$j]['link'] = $value['#row']->link;
+      $variables['result'][$j]['guid'] = $value['#row']->nid;
+      $variables['result'][$j]['description'] = '';
+      $variables['result'][$j]['created'] = date('D, d M Y H:s:i O', $value['#row']->description['#node']->created->value);
+      $variables['result'][$j]['author'] = $value['#row']->description['#node']->uid->entity->name->value;
+      $variables['result'][$j]['cat1'] = $domain1;
+      $variables['result'][$j]['cat2'] = $domain2;
+      $j++;
+    }
+  }
+}

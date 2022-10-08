@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * @file
+ * Provides functionality for Home Page management.
+ */
+
+use Drupal\user\Entity\User;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
+use Drupal\views\ViewExecutable;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function nlr_moderator_entity_queue_views_pre_render(ViewExecutable $view) {
+  global $base_url;
+
+  if ($view->id() == 'home_page_quemanagement') {
+    $result = $view->result;
+    foreach ($result as $val) {
+      if (!empty($val->items_node_field_data_name)) {
+        $value[$val->nid][] = $val->items_node_field_data_name;
+      }
+    }
+
+    // Attaching js for queue list existing data.
+    $view->element['#attached']['library'][] = 'nlr_moderator_entity_queue/nlr_moderator_entity_queue.entityqueue_exist';
+    $view->element['#attached']['drupalSettings']['nlr_moderator_entity_queue']['queue'] = $value;
+
+    // Attaching js for add/remove entity queue item.
+    $view->element['#attached']['library'][] = 'nlr_moderator_entity_queue/nlr_moderator_entity_queue.moderator_enitityqueue';
+    $view->element['#attached']['drupalSettings']['nlr_moderator_entity_queue']['base_url'] = $base_url;
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function nlr_moderator_entity_queue_preprocess_page(&$variables) {
+  global $base_url;
+
+  // Getting Current path.
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+  $analytics_server = "";
+  $host = \Drupal::request()->getHost();
+
+  // Selecting swtich case for host.
+  switch ($host) {
+    case 'www.natlawreview.com':
+      $analytics_server = 'analytics.natlawreview.com';
+      break;
+
+    default:
+      $analytics_server = 'analyticsupdate.natlawreview.com';
+  }
+  $variables['host'] = \Drupal::request()->getSchemeAndHttpHost();
+  $variables['analytics_path'] = $analytics_server;
+  $variables['referer'] = \Drupal::request()->server->get('HTTP_REFERER');
+  $variables['current_path'] = $base_url . $result;
+
+  // Code fo Piwik Analytics.
+  // Getting current user id.
+  $uid = Drupal::currentUser()->id();
+
+  // Loading user data.
+  $userData = User::load($uid);
+  $variables['logged_in'] = \Drupal::currentUser()->isAuthenticated();
+
+  if ($variables['logged_in']) {
+    // Getting user's profile data.
+    $userProfile = \Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadByUser($userData, 'analytics');
+
+    if (!empty($userProfile->field_analytics_login)) {
+      $analytics_logins = $userProfile->get('field_analytics_login')->getValue();
+    }
+
+    if (!empty($userProfile->field_analytics_password)) {
+      $analytics_password = $userProfile->get('field_analytics_password')->getValue();
+    }
+
+    if (!empty($userProfile->field_analytics_site_id)) {
+      $analytics_sid = $userProfile->get('field_analytics_site_id')->getValue();
+    }
+  }
+
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node instanceof NodeInterface) {
+    $nid = $node->id();
+    $node_data = Node::load($nid);
+    $uid = '';
+    $uid = $node_data->getOwnerId();
+    $status = $node_data->isPublished();
+    $variables['piwik_node_type'] = $node_data->bundle();
+    $variables['logged_in'] = \Drupal::currentUser()->isAuthenticated();
+
+    // Article by uid.
+    $userData = '';
+    $userData = User::load($uid);
+
+    // Getting user's profile data.
+    $userProfile = \Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadByUser($userData, 'analytics');
+
+    if (!empty($userProfile->field_analytics_site_id)) {
+      $analytics_sid = '';
+      $analytics_sid = $userProfile->get('field_analytics_site_id')->getValue();
+    }
+
+    // Checking node is published or not.
+    if ($status) {
+      $variables['piwik_node_status'] = $status;
+      if ($variables['piwik_node_type'] == "article" || $variables['piwik_node_type'] == "author" || $variables['piwik_node_type'] == "org" || $variables['piwik_node_type'] == "event") {
+        $variables['piwik_node_analytics_sid'] = $analytics_sid[0]['value'];
+      } else {
+        $variables['piwik_node_analytics_sid'] = NULL;
+      }
+
+      switch ($variables['piwik_node_type']) {
+        case "article":
+          $variables['piwik_node_org'] = ($node_data->field_org_org_info->entity) ? $node_data->field_org_org_info->entity->title->value : null;
+          break;
+        case "author":
+        case "event":
+          $variables['piwik_node_org'] = ($node_data->field_author_org) ? $node_data->field_author_org->entity->title->value : null;
+          break;
+        case "org":
+          $variables['piwik_node_org'] = $node_data->title->value;
+          break;
+        default:
+          $variables['piwik_node_org'] = NULL;
+          break;
+      }
+      $variables['piwik_node_created'] = date('Y-m-d', $node_data->created->value);
+      // Article Content type.
+      if ($node_data->bundle() == "article") {
+        $variables['piwik_article_first_author'] = $node_data->field_author->entity->title->value;
+        $variables['piwik_article_sec_author'] = ($node_data->field_author_2->entity) ? $node_data->field_author_2->entity->title->value : null;
+        $variables['piwik_article_article_source'] = ($node_data->field_article_source) ? $node_data->field_article_source->entity->title->value : null;
+        $variables['piwik_article_first_contrib'] = ($node_data->field_sub_contrib->entity) ? $node_data->field_sub_contrib->entity->title->value : null;
+        $variables['piwik_article_sec_contrib'] = ($node_data->field_contributor_2->entity) ? $node_data->field_contributor_2->entity->title->value : null;
+        $variables['piwik_article_third_contrib'] = ($node_data->field_contributor_3->entity) ? $node_data->field_contributor_3->entity->title->value : null;
+        $variables['piwik_article_fourth_contrib'] = ($node_data->field_contributor_4->entity) ? $node_data->field_contributor_4->entity->title->value : null;
+      }
+      // Event content type
+      if ($node_data->bundle() == "event") {
+        $variables['piwik_event_hosting_group'] = ($node_data->field_event_hosting_group) ? $node_data->field_event_hosting_group->entity->title->value : null;
+      }
+    }
+  }
+
+  if ($result == '/user_analytics') {
+
+    // Getting current user id.
+    $uid = Drupal::currentUser()->id();
+
+    // Loading user data.
+    $userData = User::load($uid);
+
+    // Getting user's profile data.
+    $userProfile = \Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadByUser($userData, 'analytics');
+
+    if (!$userProfile->get('field_analytics_login')->isEmpty()) {
+      $analytics_logins = $userProfile->get('field_analytics_login')->getValue();
+    }
+
+    if (!$userProfile->get('field_analytics_password')->isEmpty()) {
+      $analytics_password = $userProfile->get('field_analytics_password')->getValue();
+    }
+
+    if (!$userProfile->get('field_analytics_site_id')->isEmpty()) {
+      $analytics_sid = $userProfile->get('field_analytics_site_id')->getValue();
+    }
+
+    // Generating URL.
+    $url = '//' . $analytics_server . '/index.php?module=Login&action=logme&login=' . $analytics_logins[0]['value'] . '&password=' . md5($analytics_password[0]['value']);
+
+    $your_custom_path = $url;
+    $response = new RedirectResponse($your_custom_path);
+    $response->send();
+    return;
+  }
+}

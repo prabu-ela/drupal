@@ -1,0 +1,8 @@
+name: 'NLR Custom Print'
+description: 'This Module Allows Print, Download and Email the Node'
+type: module
+package: custom
+core_version_requirement: ^8 || ^9
+dependencies:
+  - printable:printable
+  - printable_pdf:printable_pdf

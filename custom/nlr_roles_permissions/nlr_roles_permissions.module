@@ -1,0 +1,426 @@
+<?php
+
+/**
+ * @file
+ * Provides functionality for handling Custom permissions.
+ */
+
+use Drupal\user\Entity\User;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+
+/**
+ * Implements hook_theme().
+ */
+function nlr_roles_permissions_theme($existing, $type, $theme, $path) {
+  global $base_url;
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  return [
+    'social_share' => [
+      'variables' =>
+      [
+        'share' => NULL,
+        'path' => $base_url . $result,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function nlr_roles_permissions_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Getting currenly loged in user's role.
+  $roles = \Drupal::currentUser()->getRoles();
+
+  // Getting current path.
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+  // Custom permission for form id.
+  if ($form_id == 'user_role_form') {
+
+    // Hiding Delete option if not administrator.
+    if (!in_array('administrator', $roles)) {
+      $form['actions']['delete']['#access'] = FALSE;
+    }
+  }
+
+  foreach ($roles as $value) {
+    // Validating the delete function using path.
+    if ($result == '/admin/people/roles/manage/moderator/delete' ||
+      $result == '/admin/people/roles/manage/uploader/delete' ||
+      $result == '/admin/people/roles/manage/publisher/delete' ||
+      $result == '/admin/people/roles/manage/assistantadmin/delete') {
+      if ($form_id = 'user_role_delete_form') {
+
+        // Hiding Delete option if not administrator.
+        if (!in_array('administrator', $roles)) {
+          $form['actions']['submit']['#access'] = FALSE;
+        }
+
+      }
+    }
+  }
+
+  // Getting query param userid.
+  $uid = \Drupal::request()->query->get('uid');
+
+  if (!empty($uid) && is_numeric($uid)) {
+    // Changing User Id.
+    if (isset($form['uid']['widget'][0]['target_id']['#default_value'])) {
+
+      // Loading given userid in query param.
+      $user['#default_value'] = User::load($uid);
+
+      if (!empty($user['#default_value'])) {
+        $form['uid']['widget'][0]['target_id']['#default_value'] = $user['#default_value'];
+      }
+    }
+  }
+
+  // Autocomplete Dropdown.
+  if ($form_id == 'node_article_form' || $form_id == 'node_article_edit_form') {
+
+    $form['field_org_org_info']['widget']['#ajax'] = [
+      'callback' => 'checkboxesAjaxCallback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_article_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_org_org_info')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $form['field_org_org_info']['widget']['#default_value']);
+    }
+  }
+
+  // Autocomplete Dropdown for Event.
+  if ($form_id == 'node_event_form' || $form_id == 'node_event_edit_form') {
+    $form['field_author_org']['widget']['#ajax'] = [
+      'callback' => 'checkboxe_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    // Fom Edit event triggering.
+    if ($form_id == 'node_event_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_author_org')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('event_org_id', $org_value);
+    }
+    else {
+      $form['#attached']['library'][] = 'nlr_roles_permissions/nlr_roles_permissions.org';
+    }
+  }
+
+  // Autocomplete Dropdown for Award.
+  if ($form_id == 'node_award_form' || $form_id == 'node_award_edit_form') {
+    $form['field_award_firm']['widget']['#ajax'] = [
+      'callback' => 'checkboxe_ajax_callback_award',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    // Fom Edit event triggering.
+    if ($form_id == 'node_award_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_award_firm')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('award_org_id', $org_value);
+    }
+    else {
+      $form['#attached']['library'][] = 'nlr_roles_permissions/nlr_roles_permissions.org';
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function nlr_roles_permissions_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  // Getting query param userid.
+  $uid = \Drupal::request()->query->get('uid');
+  if (!is_numeric($uid)) {
+    $uid = strtolower($uid);
+  }
+
+  // Edit operation.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  $current_path = \Drupal::service('path.current')->getPath();
+  $path_args = explode('/', $current_path);
+
+  if (empty($uid)) {
+    // Cheking edit argument.
+    if (in_array('edit', $path_args)) {
+
+      // Cheking current page instance of node.
+      if ($node instanceof NodeInterface) {
+        $nid = $node->id();
+        $node_data = Node::load($nid);
+        $uid = $node_data->getOwnerId();
+      }
+    }
+  }
+
+  // Checking user id from user profile field.
+  if (empty($uid)) {
+    $service = \Drupal::service('nlr_roles_permissions.useroverride');
+    $uid = $service->getProfileOverride();
+  }
+
+  if (is_array($uid)) {
+    $operator = 'in';
+  }
+  else {
+    $operator = '=';
+  }
+
+  if ($uid == NULL) {
+    $operator = 'IS NOT NULL';
+  }
+
+  if (($view->id() == 'user_org_list' || $view->id() == 'user_article_source_list')
+      && $view->getDisplay()->display['id'] == 'entity_reference_1') {
+    // Traverse through the 'where' part of the query.
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        if ($condition['field'] == 'node_field_data.uid') {
+          $condition = [
+            'field' => 'node_field_data.uid',
+            'value' => $uid,
+            'operator' => $operator,
+          ];
+        }
+      }
+    }
+  }
+  if ($view->id() == 'article_by_organisation' && $view->getDisplay()->display['id'] == 'block_1') {
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node instanceof NodeInterface) {
+      $nid = $node->id();
+    }
+    $result = query_function($nid);
+
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        if ($condition['field'] == 'node__field_org_org_info.field_org_org_info_target_id = :node__field_org_org_info_field_org_org_info_target_id') {
+          $condition = [
+            'field' => 'node__field_org_org_info.field_org_org_info_target_id',
+            'value' => $result,
+            'operator' => '=',
+          ];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper fucntion for getting query.
+ */
+function query_function($nid) {
+  $database = \Drupal::database();
+  $query2 = $database->query('SELECT field_org_org_info_target_id FROM node__field_org_org_info where entity_id = ' . $nid);
+  $result = $query2->fetchAssoc($nid);
+  return ($result) ? $result['field_org_org_info_target_id'] : '';
+}
+
+/**
+ * Implements hook_views_post_execute().
+ */
+function nlr_roles_permissions_views_post_execute(ViewExecutable $view) {
+  if ($view->id() == 'user_management' && $view->getDisplay()->display['id'] == 'page_2') {
+    $results = $view->result;
+    foreach ($results as $value) {
+      $uid = $value->_entity->uid->getValue();
+      $view->field['nothing']->options['alter']['text'] = get_invoice_status($uid[0]['value']);
+      $view->field['nothing_1']->options['alter']['text'] = get_contract_date($uid[0]['value']);
+      $view->field['nothing_2']->options['alter']['text'] = get_client_since($uid[0]['value']);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function nlr_roles_permissions_views_pre_render(ViewExecutable $view) {
+  global $base_url;
+  $node = \Drupal::routeMatch()->getParameter('node');
+
+  // Removing current node for the block.
+  if ($view->id() == 'article_by_organisation' && $view->getDisplay()->display['id'] == 'block_1') {
+    $results = $view->result;
+    $filteredResults = [];
+    if ($node instanceof NodeInterface) {
+      $nid = $node->id();
+    }
+    foreach ($results as $result) {
+      if ($result->offertype == 25) {
+        
+        $filteredResults[] = $$result->offertype;
+      }
+    }
+    $view->result = $filteredResults;
+  }
+}
+
+/**
+ * Helper function for custom test nothing.
+ */
+function get_invoice_status($uid = FALSE) {
+  if (!empty($uid)) {
+
+    // Loading user data.
+    $userData = User::load($uid);
+
+    // Getting user's profile data.
+    $userProfile = \Drupal::getContainer()
+      ->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadByUser($userData, 'accounting_info');
+
+    $profileAccountStatus = $userProfile->get('field_account_status')->getValue();
+    $thisyear = strftime("%Y");
+
+    // Account status login.
+    if ($profileAccountStatus[0]['value'] == "Active") {
+      // Fetching required fileds for manipulation.
+      $profile_contract_date = $userProfile->get('field_contract_date')->getValue();
+      $profile_2019_date_invoice_sent = $userProfile->get('field_2019_date_invoice_sent')->getValue();
+      $profile_2019_date_payment_received = $userProfile->get('field_2019_date_payment_received')->getValue();
+      $profile_2020_date_payment_received = $userProfile->get('field_2020_date_payment_received')->getValue();
+      $profile_2020_date_invoice_sent = $userProfile->get('field_2020_date_invoice_sent')->getValue();
+      $profile_2016_date_invoice_sent = $userProfile->get('field_2016_date_invoice_sent')->getValue();
+
+      if (((floor((time() - strtotime("2019-" . substr($profile_contract_date[0]['value'], 5))) / 24 / 3600) > 30) and ($profile_2019_date_invoice_sent[0]['value'] != "") and ($profile_2019_date_payment_received[0]['value'] == "")) or ((floor((time() - strtotime("2020-" . substr($profile_contract_date[0]['value'], 5))) / 24 / 3600) > 30) and ($profile_2020_date_invoice_sent[0]['value'] != "") and ($profile_2020_date_payment_received[0]['value'] == ""))) {
+        $status = "Delinquent";
+      }
+      elseif (($profile_2019_date_invoice_sent[0]['value'] != "" and $profile_2019_date_payment_received[0]['value'] == "") or ($profile_2020_date_invoice_sent[0]['value'] != "" and $profile_2020_date_payment_received[0]['value'] == "")) {
+        $status = "Open";
+      }
+      elseif (($thisyear == "2019" and $profile_2016_date_invoice_sent[0]['value'] != "" and $profile_2019_date_payment_received[0]['value'] != "") or ($thisyear == "2020" and $profile_2020_date_invoice_sent[0]['value'] != "" and $profile_2020_date_payment_received[0]['value'] != "")) {
+        $status = "Paid";
+      }
+      else {
+        $status = "Upcoming";
+      }
+    }
+    else {
+      $status = "-";
+    }
+    return $status;
+  }
+}
+
+/**
+ * Helper function for Contract Date.
+ */
+function get_contract_date($uid = FALSE) {
+  // Loading user data.
+  $userData = User::load($uid);
+
+  // Getting user's profile data.
+  $userProfile = \Drupal::getContainer()
+    ->get('entity_type.manager')
+    ->getStorage('profile')
+    ->loadByUser($userData, 'accounting_info');
+  $profile_contract_date = $userProfile->get('field_contract_date')->getValue();
+  return substr($profile_contract_date[0]['value'], 5);
+}
+
+/**
+ * Helper function for client since.
+ */
+function get_client_since($uid = FALSE) {
+
+  // Loading user data.
+  $userData = User::load($uid);
+
+  // Getting user's profile data.
+  $userProfile = \Drupal::getContainer()
+    ->get('entity_type.manager')
+    ->getStorage('profile')
+    ->loadByUser($userData, 'accounting_info');
+  $profile_contract_date = $userProfile->get('field_contract_date')->getValue();
+  return substr($profile_contract_date[0]['value'], 0, 4);
+}
+
+/**
+ * Helper function for org by author for article.
+ */
+function checkboxesAjaxCallback(array &$form, FormStateInterface $form_state) {
+  $org = $form_state->getTriggeringElement();
+  $request = \Drupal::request();
+  $session = $request->getSession();
+  $org_id = $form_state->getValue('field_org_org_info');
+  $session->remove('org_id');
+  $session->set('org_id', $org_id[0]['target_id']);
+  return $form;
+}
+
+/**
+ * Helper function for org by author for event .
+ */
+function checkboxe_ajax_callback_award(array &$form, FormStateInterface $form_state) {
+  $org = $form_state->getTriggeringElement();
+  $request = \Drupal::request();
+  $session = $request->getSession();
+  $award_org_id = $form_state->getValue('field_award_firm');
+  $session->remove('award_org_id');
+  $session->set('award_org_id', $award_org_id[0]['target_id']);
+  return $form;
+}
+
+/**
+ * Helper function for org by author for event.
+ */
+function checkboxe_ajax_callback(array &$form, FormStateInterface $form_state) {
+  $org = $form_state->getTriggeringElement();
+  $request = \Drupal::request();
+  $session = $request->getSession();
+  $award_org_id = $form_state->getValue('field_author_org');
+  $session->remove('event_org_id');
+  $session->set('event_org_id', $award_org_id[0]['target_id']);
+  return $form;
+}
+
+
+/**
+ * Implements hook_views_pre_build().
+ */
+function nlr_roles_permissions_views_pre_build(ViewExecutable $view) {
+  $request = \Drupal::request();
+  $session = $request->getSession();
+
+  if ($view->id() == 'user_author_list') {
+    $view->filter['field_author_org_target_id']->value["value"] = $session->get('org_id');
+    // $session->remove('org_id');
+  }
+
+  if ($view->id() == 'event_user_author_list') {
+    $view->filter['field_author_org_target_id']->value["value"] = $session->get('event_org_id');
+    // $session->remove('event_org_id');
+  }
+
+  if ($view->id() == 'award_author_list') {
+    $view->filter['field_author_org_target_id']->value["value"] = $session->get('award_org_id');
+    // $session->remove('event_org_id');
+  }
+}

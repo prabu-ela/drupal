@@ -1,0 +1,9 @@
+nlr_roles_permissions.org:
+  version: 1.0
+  js:
+    js/orgbyauthor.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

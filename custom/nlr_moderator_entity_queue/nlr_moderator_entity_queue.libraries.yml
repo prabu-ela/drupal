@@ -1,0 +1,17 @@
+nlr_moderator_entity_queue.moderator_enitityqueue:
+  version: 1.0
+  js:
+    js/entityqueue.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+nlr_moderator_entity_queue.entityqueue_exist:
+  version: 1.0
+  js:
+    js/entityqueuelist.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
