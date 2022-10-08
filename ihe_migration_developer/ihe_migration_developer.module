@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\migrate\Plugin\MigrationInterface;
+use Drupal\migrate\Plugin\MigrateSourceInterface;
+use Drupal\migrate\Row;
+
+/**
+ * Implements hook_migrate_prepare_row().
+ * Alter the value before processing the Migration.
+ */
+function ihe_migration_developer_migrate_prepare_row(Row $row, MigrateSourceInterface $source, MigrationInterface $migration) {
+  // $message = $row->getSourceProperty('Logo');
+  //     //Create media entity with saved file.
+  //     $image_media = Media::create([
+  //     'bundle' => 'image',
+  //     'uid' => \Drupal::currentUser()->id(),
+  //     'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+  //     'field_media_image' => [
+  //       'target_id' => 460,
+  //       'alt' => t('Placeholder image'),
+  //       'title' => t('Placeholder image'),
+  //     ],
+  //    ]);
+  //     $image_media->save();
+  //     //dpm($image_media->id());
+  //     //$row->getSourceProperty('format')
+  //     $path = "https://www.insidehighered.com/sites/default/server_files/styles/large-copy/public/media/GettyImages-165669765.jpg";
+  //     \Drupal::logger('ihe_migration_developer')->notice($message);
+  //     $row->setSourceProperty('Logo',$path);
+  //     $row->setSourceProperty('Nid_2',$image_media->id());
+}

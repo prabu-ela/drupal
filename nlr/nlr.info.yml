@@ -1,0 +1,5 @@
+name: National Law Review
+description: Custom module for the NLR web site.
+type: module
+package: custom
+core_version_requirement: ^8 || ^9

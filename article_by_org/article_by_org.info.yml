@@ -1,0 +1,8 @@
+name: 'Article by organisation block'
+type: module
+description: 'This module is used for create a block.'
+core: '8.x'
+core_version_requirement: ^8 || ^9
+package: custom
+dependencies:
+  - block

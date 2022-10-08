@@ -1,0 +1,283 @@
+<?php
+
+use \Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\node\NodeInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Database\Database;
+use Drupal\Core\Entity\EntityFormInterface;
+/**
+ * @file
+ * Contains module functions for Structured Data.
+ */
+
+function nlr_audit_form_alter(&$form, FormStateInterface $form_state, $form_id){
+ 
+  if(isset($form['#entity_type']) && ($form['#entity_type'] == "node") ){
+    
+    if ($form_state->getFormObject() instanceOf EntityFormInterface) {
+      $nid = $form_state->getformObject()->getEntity()->id();
+    }
+    //$nid = $form_state->getformObject()->getEntity()->id();
+    $node_data = Node::load($nid);
+   // $uid = $node_data->getOwnerId();
+    $nodes = \Drupal\node\Entity\Node::load($nid);
+
+    
+    $nid_array = array("node.article.default","node.article_source.default","node.author.default","node.award.default"
+                        ,"node.do_not_publish.default","node.event.default","node.newsletter_archive.default","node.org.default",
+                        "node.page.default","node.practice_groups.default");
+
+    if (!in_array($nid,$nid_array)) {
+      if (!empty($nodes)) {
+        if(!empty($nid)) {  
+          $query = \Drupal::database()->select('nlr_audit', 't');
+          $query->fields('t',['uid','create_date','content_before', 'content_after', 'audit_type', 'uid']);
+          $query->condition('id', $nid);
+          $query->condition('node_type',$nodes->bundle());
+          $query->orderBy('create_date', 'DESC');
+          $results = $query->execute()->fetchAll();
+          $rows=array();
+          $rows = $results; 
+        }
+      }
+
+      $description1 = _nlr_audit_summary($rows);
+      $form['audit-summary'] = array(
+        '#type' => 'details',
+        '#title' => t('Audit Overview'),
+        '#description' => $description1,
+        '#open' => TRUE, // Controls the HTML5 'open' attribute. Defaults to FALSE.
+      );
+
+      $description = _nlr_audit_history($rows);
+
+      $form['audit-history'] = array(
+        '#type' => 'details',
+        '#title' => t('Audit History'),
+        '#description' => $description,
+        '#open' => FALSE, // Controls the HTML5 'open' attribute. Defaults to FALSE.
+      );
+    }
+  }
+  $form['#attached']['library'][] = 'nlr_audit/nlr_audit.css';
+
+}
+
+function _nlr_audit_summary($rows){
+
+   $before = "";
+  $after  = "";
+  //print_r($rows);exit;
+  foreach ($rows as $audit) {
+  $before = json_decode($audit->content_before, false);
+  $after  = json_decode($audit->content_after, false);
+
+  $user = \Drupal\user\Entity\User::load($audit->uid);
+  $username = $user->getDisplayName();
+
+  foreach($before as $record) {
+  if ($record->field == 'status') $status_before = $record->content;
+  }
+  foreach($after as $record) {
+  if ($record->field == 'status') $status_after = $record->content;
+  }
+
+  if ($status_before === 0 && $status_after === 1) {
+        $row[] = array(
+        'Published By',
+        $username,
+        date('Y-m-d h:i:s',strtotime($audit->create_date))
+        );
+    } else if (sizeof($before) === 0 && $status_after === 1) {
+        $row[] = array(
+        'Published By',
+        $username,
+        date('Y-m-d h:i:s',strtotime($audit->create_date))
+        );
+    } else if ($status_before === 1 && $status_after === 0) {
+        $row[] = array(
+        'Un-Published By',
+        $username,
+        date('Y-m-d h:i:s',strtotime($audit->create_date))
+        );
+    } else if ($audit->content_before === '[]' && $audit->content_after !== '[]') {
+        $row[] = array(
+        'Created By',
+        $username,
+        date('Y-m-d h:i:s',strtotime($audit->create_date))
+        );
+    } else if ($audit->content_before === $audit->content_after) {
+      $row[] = array(
+      'Saved By',
+      $username,
+      date('Y-m-d h:i:s',strtotime($audit->create_date))
+      );
+    } else {
+      $row[] = array(
+      'Updated By',
+      $username,
+      date('Y-m-d h:i:s',strtotime($audit->create_date))
+      );
+    }
+  }
+
+  $output = array();
+  $output = [
+    '#type' => 'table',
+    '#header' => array(),
+    '#rows' => $row,
+    '#empty' => t('No nodes have been worked on the last 24 hours.'),
+    '#attributes' => array('style' => 'width: 100%' )
+  ];
+
+  return $output;
+
+}
+
+function _nlr_audit_history($rows){
+   
+ 
+  $audits = array();
+  $output = array();
+  $audits_table = "";
+  foreach ($rows as $audit) {
+    $user = \Drupal\user\Entity\User::load($audit->uid);
+    $username = $user->getDisplayName();
+
+    $service = \Drupal::service('nlr_audit.custom_services');
+    //$compare = $service->compare($audit->content_before, $audit->content_after);
+    $diff = $service->getServiceData($service->compare($audit->content_before, $audit->content_after)); 
+   
+   
+    $audits_table .= "<tr><td>".$username."</td><td>".$diff."</td><td>".date('Y-m-d h:i:s',strtotime($audit->create_date))."</td></tr>";
+   
+  }
+  $output  = "<table ><tr><th>name</th><th>difference</th><th>date</th></tr>";
+  $output .= $audits_table;
+  $output .= "</table>";
+  $output_value = ['#markup'=>$output];
+  return $output_value;
+}
+
+
+function nlr_audit_node_insert($node)
+{
+  //insert record in nlr sudit while add content
+  $serializer = \Drupal::service('serializer');//serializing the data to get node entity
+  $node = Node::load($node->id());
+  $data = $serializer->serialize($node, 'json', ['plugin_id' => 'entity']);
+  $audit = array( "old" => array(), "new" => array(json_decode($data)) );
+
+  _nlr_audit_add($node->id(), $node->bundle(), $audit);
+
+}
+function _nlr_audit_add($id, $node_type, $audit, $audit_type = 'SYSTEM')
+{
+ 
+ // Getting query param userid.
+  
+  $uid = \Drupal::currentUser()->id();
+ 
+  $args = array(
+      'uid' => $uid,
+      'id' => $id,
+      'node_type' => $node_type,
+      'content_before' =>  json_encode($audit['old'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+      'content_after' =>json_encode($audit['new'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+      'audit_type' => $audit_type
+  );
+  $query = \Drupal::database();
+         $query ->insert('nlr_audit')
+             ->fields($args)
+             ->execute();
+}
+function nlr_audit_node_update($node){
+    
+    // Audit change
+    $audit = _nlr_audit_record_change($node);
+    _nlr_audit_add($node->id(), $node->bundle(), $audit);
+   
+}
+/**
+ * Helper function that returns a string of audit changes.
+ */
+
+function _nlr_audit_record_change($node) {
+  $audit      = array( "old" => array(), "new" => array() );
+  $serializer = \Drupal::service('serializer');
+  $new_val = json_decode($serializer->serialize($node, 'json', ['plugin_id' => 'entity']),true);
+  
+  $old_val = array();
+  foreach($node as $new_field => $new_val_array) {
+    $old_val = json_decode($serializer->serialize($node->original, 'json', ['plugin_id' => 'entity']),true);
+  }
+  foreach($new_val as $new_field => $new_val_array){
+      if(sizeof($new_val_array) == 1 &&  sizeof($old_val[$new_field]) == 1  ){
+        $new_val_in = $new_val_array[0];
+        $old_val_in = $old_val[$new_field][0];
+        $result     = array_diff($old_val_in,$new_val_in);
+        if(sizeof($result) > 0){
+          array_push($audit['old'],array( 'field' => $new_field, 'content' => $old_val_in));
+          array_push($audit['new'],array( 'field' => $new_field, 'content' => $new_val_in));
+        }
+      }else if(sizeof($new_val_array) == sizeof($old_val[$new_field])){
+          $newvaluecount = sizeof($new_val_array);
+          $oldvaluecount = sizeof($old_val[$new_field]);
+          for($i=0;$i<$newvaluecount;$i++){
+            $new_val_in = $new_val_array[$i];
+            $old_val_in = $old_val[$new_field][$i];
+            $result     = array_diff($old_val_in,$new_val_in);
+            if(sizeof($result) > 0){
+              array_push($audit['old'],array( 'field' => $new_field, 'content' => $old_val_in));
+              array_push($audit['new'],array( 'field' => $new_field, 'content' => $new_val_in));
+            }
+          }
+
+      }else{
+          $newvaluecount = sizeof($new_val_array);
+          $oldvaluecount = sizeof($old_val[$new_field]);
+          if($newvaluecount > $oldvaluecount){
+            for($i=0;$i<$newvaluecount;$i++){
+              $new_val_in = $new_val_array[$i];
+              $old_val_in = $old_val[$new_field][$i];
+              if(is_array($old_val[$new_field][$i])){
+                $old_val_in = $old_val[$new_field][$i];
+              }else{
+                $old_val_in = array();
+              }
+              $result     = array_diff($new_val_in,$old_val_in);
+             
+              if(sizeof($result) > 0){
+                array_push($audit['old'],array( 'field' => $new_field, 'content' => $old_val_in));
+                array_push($audit['new'],array( 'field' => $new_field, 'content' => $new_val_in));
+              }
+             
+               
+            }
+            
+          }else{
+            for($i=0;$i<$oldvaluecount;$i++){
+              $new_val_in = $new_val_array[$i];
+              $old_val_in = $old_val[$new_field][$i];
+              if(is_array($new_val_in)){
+                $new_val_in = $new_val_in;
+              }else{
+                $new_val_in = array();
+              }
+              $result     = array_diff($old_val_in,$new_val_in);
+              if(sizeof($result) > 0){
+                array_push($audit['old'],array( 'field' => $new_field, 'content' => $old_val_in));
+                array_push($audit['new'],array( 'field' => $new_field, 'content' => $new_val_in));
+              }
+            }
+           
+          }
+      }
+
+     
+  }
+  return $audit;
+}

@@ -1,0 +1,5 @@
+name: 'Moderator Entity Queue Operation'
+description: 'This Module Allows The Moderator To add Entity Queue'
+type: module
+package: custom
+core_version_requirement: ^8 || ^9

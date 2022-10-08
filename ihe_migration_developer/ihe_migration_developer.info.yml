@@ -1,0 +1,7 @@
+name: IHE Migration Custom Module
+description: Creates a module for developer use at the time of migration.
+package: Custom
+type: module
+core_version_requirement: ^8 || ^9
+
+#hidden: true
