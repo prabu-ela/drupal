@@ -1,7 +1,0 @@
-nlr_custom_print.email_node:
-  path: '/mail/node/{nid}/{uid}'
-  defaults:
-    _form: 'Drupal\nlr_custom_print\Form\EmailForm'
-    _title: 'Send by E-Mail'
-  requirements:
-    _permission: 'access content'

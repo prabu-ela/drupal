@@ -1,4 +1,0 @@
-services:
-  nlr_audit.custom_services:
-    class: Drupal\nlr_audit\Services\CustomService
-    arguments: []

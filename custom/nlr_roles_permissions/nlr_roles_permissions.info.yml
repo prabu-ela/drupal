@@ -1,5 +1,0 @@
-name: 'Roles Custom Permission Validation'
-description: 'This module used to restricted permisson over role'
-type: module
-package: custom
-core_version_requirement: ^8 || ^9

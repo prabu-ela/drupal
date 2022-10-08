@@ -1,5 +1,0 @@
-name: 'NLR Custom Article Feed'
-description: 'This Module Allows To Create Custom Feed'
-type: module
-package: custom
-core_version_requirement: ^8 || ^9

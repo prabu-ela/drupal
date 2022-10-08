@@ -1,5 +1,0 @@
-name: Slick slider
-type: module
-description: 'A custom module for slick slider'
-package: custom
-core_version_requirement: ^8 || ^9

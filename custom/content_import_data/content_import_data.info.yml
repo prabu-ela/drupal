@@ -1,5 +1,0 @@
-name: 'Content(Node) Data Import'
-type: module
-description: 'This module is used for get Node data from Drupal 7.'
-core_version_requirement: ^8 || ^9
-package: custom

@@ -1,7 +1,0 @@
-nlr_moderator_entity_queue.queue_management:
-  path: '/manage_enitity_queue/{qid}/{nid}'
-  defaults:
-    _controller: '\Drupal\nlr_moderator_entity_queue\Controller\ModeratorEntityQueueController::manipulateQueueNode'
-    _title: 'Entity Queue Management'
-  requirements:
-    _permission: 'access content'

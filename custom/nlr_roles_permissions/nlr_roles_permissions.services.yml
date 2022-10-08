@@ -1,4 +1,0 @@
-services:
-  nlr_roles_permissions.useroverride:
-    class: Drupal\nlr_roles_permissions\Services\UserOverrideProfileServices
-    arguments: ['@current_user', '@entity_type.manager']
