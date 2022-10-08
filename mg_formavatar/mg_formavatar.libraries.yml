@@ -1,0 +1,32 @@
+avatar_js:
+  version: 1.0
+  js:
+    js/avatar_images.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+booth_js:
+  version: 1.0
+  js:
+    js/booth.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+auditorium_js:
+  version: 1.0
+  js:
+    js/auditorium.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+resourcecenter_js:
+  version: 1.0
+  js:
+    js/resourcecenter.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal

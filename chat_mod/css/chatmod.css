@@ -1,0 +1,32 @@
+/* #ifc-app{
+    display: none;
+} */
+/* .iflychat-popup{
+  display: none;
+} */
+
+/* .iflychat-popup .ifc-app-container #ifc-app .ifc-chat-list-container{
+  display: none;
+} */
+
+/* #ifc-app .ifc-chat-list-header{
+  display: none;
+} */
+
+/* .ifc.ifc-popup #ifc-app .ifc-chat-list-container {
+  position: relative;
+  display: none;
+  float: right;
+  bottom: 20px;
+  height: 20px;
+  width: 256px;
+  right: 0;
+  margin: 0 20px 0 0;
+} */
+
+.toolbar-horizontal .iflychat-popup {
+  display: block;
+}
+#openchat {
+  top: 200px !important;
+}

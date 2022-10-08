@@ -1,0 +1,16 @@
+dynamic_menu:
+  version: 1.0
+  js:
+    js/mainMenu.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+chat_header_menu:
+  version: 1.0
+  js:
+    js/chatHeader.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal

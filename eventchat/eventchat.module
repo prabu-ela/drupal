@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Enables Event chat.
+ */
+
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_help().
+ */
+function eventchat_theme($existing, $type, $theme, $path) {
+  return [
+    'agent_dashboard' => [
+      'variables' => [
+        'assign' => [],
+        'unassign' => [],
+        'exhibit_manager' => [],
+        'user_tye' => NULL,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function eventchat_page_attachments_alter(array &$attachments) {
+  $user = User::load(\Drupal::currentUser()->id());
+  $attachments['#attached']['library'][] = 'eventchat/chat2';
+  $attachments['#attached']['drupalSettings']['c_u_id'] = \Drupal::currentUser()->id();
+  $attachments['#attached']['drupalSettings']['c_u_name'] = $user->name->value;
+  $attachments['#attached']['drupalSettings']['route_name'] = \Drupal::routeMatch()->getRouteName();
+  $attachments['#attached']['drupalSettings']['roles'] = \Drupal::currentUser()->getRoles();
+}

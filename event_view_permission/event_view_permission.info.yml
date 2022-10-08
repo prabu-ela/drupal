@@ -1,0 +1,5 @@
+name: 'Event Contexual View Permission Only'
+description: 'Custom Module'
+type: module
+package: Custom
+core_version_requirement: ^8 || ^9

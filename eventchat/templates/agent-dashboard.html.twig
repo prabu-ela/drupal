@@ -1,0 +1,115 @@
+
+<div id="mySidebar" class="sidebar">
+  <div class="chat-sidebar-left">
+    <a href="javascript:void(0)" class="closebtn" >×</a>
+    <!-- Selecting the type of page -->
+      <div id="select_type_div" class="select_type_div">
+        <select id="select_type">
+        <option value="0">--Select Type--</option>
+        <option value="1">Information Desk</option>
+        <option value="2">Booth</option>
+        </select>
+      </div>
+    <!-- End selecting the type of page -->
+    <!-- List of assigned chat to display -->
+      <div id="placing_data_assign">
+       
+      </div>
+    <!-- End list of assigned chat to display -->
+    <!-- List of unassigned chat to display -->
+      <div id="placing_data_unassign">
+
+      </div>
+    <!-- End list of unassigned chat to display -->
+  </div>
+  <div class="chat-sidebar-right">
+    <div class="top-title"> 
+      <h3>Chat History</h3>
+      <a href="#" class="view_chat_history close_history">Close</a>
+    </div>
+    
+    <div id="chat_history" class="chat_history collapsible-menu imagemap-scalable open-on-click" data-scale-origin="left top">
+      <div class="chat_history_data">
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <button class="openbtn" ><i class='fas fa-comments' style='font-size:24px;color:#000'></i></button>  
+</div>
+
+<div id="myModaldoc22" style="display:none;" >
+  <div class="modal-header">
+      <h4 class="toggleresource">Representative</h4>
+      <button type="button" class="btn btn-default close__btn assign_repo_close_div">Close</button>
+    </div>
+  <div id="documents1" class="documents1 collapsible-menu imagemap-scalable open-on-click" data-scale-origin="left top">
+    <div class="documents-menu33" style="display: block;">
+
+    <input type="text" id="queue_id" hidden>
+
+    <div class="user_section">
+      <div class="namelabel_user_assing">User :</div>
+      <div class="nameshow_user_assign"></div>
+    </div>
+
+    <div class="assign_section">
+      <div class="assignto_label">Assign to :</div>
+      <div class="assignto_dropdown">
+        <select class="list_repo" id="list_repo">
+        <option value="0">--Select Representative--</option>
+        {% if exhibit_manager is not empty %}
+        {% for key,items in exhibit_manager%}
+
+        <option value="{{ items.exhibit_user_id }}">{{ items.exhibit_username }}</option>
+
+        {% endfor %}
+        </select>
+        {% endif %}
+      </div>
+      <div class="chat_slected_user"> <a id="chat_assign" style="display:none;">Chat with</a></div>
+    </div>
+
+    <div class="assgin_submit_section">
+
+      <div class="assgin_submit_label"> Are you sure ? </div>
+      <div class="assgin_submit_action">
+      <a id="submit_assign" class="submit_assign">Make Assignment</a> 
+      </div>
+      <div id="error_repo"></div>
+
+    </div>
+    </div>
+  </div>
+</div> 
+
+
+
+<!-- Popup to show chat history -->
+<div id="myModalchat_histroy" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h4 class="toggleresource">Chat History</h4>
+      <button type="button" class="btn btn-default close__btn" data-dismiss="modal">X</button>
+    </div>
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-body">
+        <!-- Document Popup -->
+        <div id="chat_history" class="chat_history collapsible-menu imagemap-scalable open-on-click" data-scale-origin="left top">
+          <div class="chat_history_data">
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+      

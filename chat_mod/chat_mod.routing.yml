@@ -1,0 +1,14 @@
+
+chat_mod.call:
+  path: '/chatmod/call_chaturl_afterlogin'
+  defaults:
+    _controller: '\Drupal\chat_mod\Controller\ChatmodController::callChaturlAfterlogin'
+  requirements:
+    _permission: 'access content'
+
+chat_mod.passrest:
+  path: '/chatmod/call_chaturl_afterloginreset'
+  defaults:
+    _controller: '\Drupal\chat_mod\Controller\ChatmodController::callChaturlAfterloginreset'
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,126 @@
+eventchat.eventchat_config:
+  path: '/admin/config/eventchat'
+  defaults:
+    _title: 'EventChat'
+  requirements:
+    _permission: 'access administration pages'
+
+eventchat.settings_form:
+  path: '/admin/config/eventchat/configuration'
+  defaults:
+    _form: '\Drupal\eventchat\Form\EventchatSettingsForm'
+    _title: 'EventChat Configuration'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+
+eventchat.module.settings:
+  path: '/admin/config/eventchat/configuration/module-settings'
+  defaults:
+    _form: '\Drupal\eventchat\Form\EventchatSettingsForm'
+    _title: 'Module Settings'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+
+eventchat.app.settings:
+  path: '/admin/config/eventchat/configuration/app-settings'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::eventchatappsettings'
+    _title: 'EventChat Configuration'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+
+eventchat.assign:
+  path: '/eventchat/assign'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::assignuser'
+    _title: 'EventChat assignuser'
+  requirements:
+    _permission: 'access content'
+
+eventchat.saveqdata:
+  path: '/eventchat/saveqdata'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::saveqdata'
+    _title: 'EventChat saveqdata'
+  requirements:
+    _permission: 'access content'
+
+eventchat.getdata:
+  path: '/eventchat/getdata'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::getdata'
+    _title: 'EventChat getdata'
+  requirements:
+    _permission: 'access content'
+
+eventchat.getdataunassign:
+  path: '/eventchat/getdataunassign'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::getdataunassign'
+    _title: 'EventChat getdataunassign'
+  requirements:
+    _permission: 'access content'
+
+eventchat.assignedtaskrepo:
+  path: '/eventchat/assignedtaskrepo'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::assignedtaskrepo'
+    _title: 'EventChat assignedtaskrepo'
+  requirements:
+    _permission: 'access content'
+
+eventchat.getthreads:
+  path: '/eventchat/getthreads'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::getthreads'
+    _title: 'EventChat getthreads'
+  requirements:
+    _permission: 'access content'
+
+eventchat.markcomplete:
+  path: '/eventchat/markcomplete'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::markcomplete'
+    _title: 'EventChat markcomplete'
+  requirements:
+    _permission: 'access content'
+
+eventchat.checkrepoget:
+  path: '/eventchat/checkrepoget'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::checkrepoget'
+    _title: 'EventChat checkrepoget'
+  requirements:
+    _permission: 'access content'
+
+eventchat.checkusersidemarkcomplte:
+  path: '/eventchat/checkusersidemarkcomplte'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::checkusersidemarkcomplte'
+    _title: 'EventChat checkusersidemarkcomplte'
+  requirements:
+    _permission: 'access content'
+
+eventchat.getuser_to_closechat:
+  path: '/eventchat/getuser_to_closechat'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::getusertoclosechat'
+    _title: 'EventChat getuser_to_closechat'
+  requirements:
+    _permission: 'access content'
+
+eventchat.getnewunassigneddata:
+  path: '/eventchat/getnewunassigneddata'
+  defaults:
+    _controller: '\Drupal\eventchat\Controller\EventchatController::getnewunassigneddata'
+    _title: 'EventChat getuser_to_closechat'
+  requirements:
+    _permission: 'access content'
+
+

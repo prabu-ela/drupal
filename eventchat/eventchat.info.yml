@@ -1,0 +1,6 @@
+name: 'EventChat'
+description: 'Core Multi-Site, Multi-Event Chat Implementation using IFlyChat'
+type: module
+package: custom
+configure: eventchat.settings_form
+core_version_requirement: ^8 || ^9

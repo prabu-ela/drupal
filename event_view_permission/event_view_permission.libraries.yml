@@ -1,0 +1,15 @@
+event:
+  version: 1.x
+  # css:
+  #   layout:
+  #     css/chatmod.css: {}
+  #   theme:
+  #     css/chatmod.css: {}
+  js:
+    js/jquery.ui.js: {}
+    js/chatmod.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+

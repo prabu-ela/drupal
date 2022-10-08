@@ -1,0 +1,10 @@
+event:
+  version: 1.x
+  js:
+    js/mymodal.js: {}
+    js/registerscroll.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupal.dialog.ajax
+

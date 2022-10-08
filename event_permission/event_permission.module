@@ -1,0 +1,275 @@
+<?php
+
+/**
+ * @file
+ * Marcom Event Permission View Contextual Filter View.
+ */
+
+use Drupal\user\Entity\User;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+/**
+ * Implements hook_form_alter().
+ */
+function event_permission_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  global $base_path;
+
+  // Login And Register Form Start.
+  if ($form_id == "user_register_form") {
+    $form['#attributes']['data-user-info-from-browser'] = FALSE;
+    $form['title_custom'] = [
+      '#type' => 'item',
+      '#markup' => '<h2 > Register </h2>',
+      '#weight' => -1,
+    ];
+    $form['account']['mail']['#title'] = t('E-mail Address');
+    $form['account']['mail']['#weight'] = 99;
+    $form['account']['name']['#weight'] = 98;
+    $form['account']['pass']['#weight'] = 100;
+    $form['account']['mail']['#suffix'] = "<div class='description'>A valid e-mail address. All e-mails from the system will be sent to this address. The e-mail address is not made public and will only be used if you wish to receive a new password or wish to receive certain news or notifications by e-mail.</div>";
+    $form['account']['name']['#suffix'] = "<div class='description'>Spaces are allowed; punctuation is not allowed except for periods, hyphens, apostrophes, and underscores.</div>";
+    $form['field_register_with_events']['#suffix'] = "<div class='description'>Set which events this user is affiliated with</div>";
+    $form['#validate'][] = 'starting_drupal_dev_form_validate';
+    foreach (array_keys($form['actions']) as $action) {
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        $form['actions'][$action]['#submit'][] = 'event_permission_form_submit';
+      }
+    }
+  }
+  if ($form_id == "user_form") {
+    $pass_reset = \Drupal::request()->query->get('pass-reset-token');
+    $pass_reset_change = \Drupal::request()->query->get('change-password');
+    if (isset($pass_reset)) {
+      $form['field_title']['#access'] = FALSE;
+      $form['field_organization_name']['#access'] = FALSE;
+      $form['pass']['#access'] = FALSE;
+      $form['field_gender']['#access'] = FALSE;
+      $form['field_available_for_chat2']['#access'] = FALSE;
+      $form['field_bio']['#access'] = FALSE;
+      $form['timezone']['#access'] = FALSE;
+      $form['field_first_name']['#access'] = FALSE;
+      $form['field_last_name']['#access'] = FALSE;
+      $form['field_register_with_events']['#access'] = FALSE;
+      $form['field_occupationalarea']['#access'] = FALSE;
+      $form['field_career_level']['#access'] = FALSE;
+      $form['user_picture']['#access'] = FALSE;
+      $form['account']['mail']['#attributes'] = ['readonly' => 'readonly'];
+      $form['account']['mail']['#access'] = FALSE;
+      $form['account']['current_pass']['#access'] = FALSE;
+    }
+    elseif (isset($pass_reset_change)) {
+      $form_state->set('user_pass_reset', 0);
+      $form['field_title']['#access'] = FALSE;
+      $form['field_organization_name']['#access'] = FALSE;
+      $form['field_gender']['#access'] = FALSE;
+      $form['field_available_for_chat2']['#access'] = FALSE;
+      $form['field_bio']['#access'] = FALSE;
+      $form['timezone']['#access'] = FALSE;
+      $form['field_first_name']['#access'] = FALSE;
+      $form['field_last_name']['#access'] = FALSE;
+      $form['field_register_with_events']['#access'] = FALSE;
+      $form['field_occupationalarea']['#access'] = FALSE;
+      $form['field_career_level']['#access'] = FALSE;
+      $form['user_picture']['#access'] = FALSE;
+      $form['account']['mail']['#attributes'] = ['readonly' => 'readonly'];
+      $form['account']['mail']['#access'] = FALSE;
+      $form['account']['current_pass']['#access'] = TRUE;
+      $form['account']['current_pass']['#description'] = '<small id="edit-current-pass--description" class="description text-muted">Required if you want to change the Email address or Password below.</small>';
+      $form['account']['pass']['#access'] = TRUE;
+    }
+    else {
+      // Edit Profile From.
+      $form['account']['mail']['#weight'] = 99;
+      $form['account']['name']['#weight'] = 98;
+      $form['account']['current_pass']['#weight'] = 100;
+      $form['account']['name']['#access'] = TRUE;
+      $form['field_title']['#access'] = FALSE;
+      $form['field_organization_name']['#access'] = FALSE;
+      $form['account']['pass']['#access'] = FALSE;
+      $form['field_gender']['#access'] = FALSE;
+      $form['field_available_for_chat2']['#access'] = FALSE;
+      $form['field_bio']['#access'] = FALSE;
+      $form['timezone']['#access'] = FALSE;
+      $form['account']['current_pass']['#access'] = TRUE;
+      $form['account']['current_pass']['#description'] = '<small id="edit-current-pass--description" class="description text-muted">Required if you want to change the Email address above.</small>';
+      $form['user_picture']['#access'] = FALSE;
+      $form['#validate'][] = 'starting_drupal_dev_form_validate';
+      foreach (array_keys($form['actions']) as $action) {
+        if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+          $form['actions'][$action]['#submit'][] = 'event_permission_form_submit';
+        }
+      }
+    }
+
+  }
+  if ($form_id == 'user_pass') {
+
+    $form['name']['#title'] = t('Username or e-mail address');
+    $form['actions']['submit']['#value'] = t('E-mail new password');
+
+    foreach (array_keys($form['actions']) as $action) {
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        $form['actions'][$action]['#submit'][] = 'event_permission_form_submit';
+      }
+    }
+  }
+  if ($form_id == "user_login_form") {
+    $form['actions']['#suffix'] = '<div class="actions-suffix"><a href="' . $base_path . 'user/password">Forgot Password?</a></div>';
+  }
+
+}
+
+/**
+ * Implements hook_custom_submit_alter().
+ */
+function event_permission_form_submit(array &$form, FormStateInterface $form_state) {
+  if ($form['#form_id'] == 'user_pass') {
+    $values = $form_state->getCompleteForm();
+    $query = \Drupal::entityQuery('user');
+    $group = $query->orConditionGroup()->condition('name', $values['name']['#value'])->condition('mail', $values['name']['#value']);
+    $tids = $query->condition($group)->execute();
+    if (!empty($tids)) {
+      $id = array_keys($tids);
+      $user_email = User::load($id[0]);
+      $user_values = $user_email->getEmail();
+
+      $users = \Drupal::entityTypeManager()->getStorage('user')->loadByProperties(['mail' => $user_values]);
+      $account = reset($users);
+      $mail = _user_mail_notify('password_reset', $account);
+
+      \Drupal::service('messenger')->addMessage('Further instructions have been sent to your email address.', 'status');
+    }
+    else {
+      \Drupal::service('messenger')->addMessage($values['name']['#value'] . ' is not recognized as a username or an email address.', 'error');
+    }
+  }
+
+  if ($form['#form_id'] == "user_form") {
+    \Drupal::service('messenger')->addMessage('The changes have been saved.', 'status');
+  }
+
+  if ($form['#form_id'] == 'user_register_form') {
+
+    $form_state->setRedirect('user.register');
+  }
+
+  if ($form['#form_id'] == 'user_login_form') {
+    if (empty($uid = $form_state->get('uid'))) {
+      global $base_url;
+      $redirect = new RedirectResponse($base_url . '/user/password');
+      $redirect->send();
+      \Drupal::service('messenger')->addMessage('Further instructions have been sent to your email address.', 'status');
+      exit;
+
+    }
+  }
+
+}
+
+/**
+ * Implements of hook_init().
+ */
+function event_permission_init() {
+  if (is_array($_SESSION['messages'])) {
+    foreach ($_SESSION['messages'] as $type => $messages) {
+      foreach ($messages as $key => $message) {
+        if ($type == "status" && strpos($message, 'validation e-mail has been sent to your e-mail address')) {
+          $_SESSION['messages']['status'][$key] = 'Your account has been successfully created,Further instructions have been sent to your email address';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Validate form for change the error messages.
+ */
+function starting_drupal_dev_form_validate($form = [], $form_state = [], $form_id = '') {
+  if ($form['#form_id'] == "user_register_form" || $form['#form_id'] == "user_form") {
+    $errors = $form_state->getErrors();
+    if ($errors) {
+      foreach ($errors as $error_key => $error_val) {
+        // Check to see if the error is related to the desired field:
+        if (strpos($error_key, 'field_occupationalarea') !== FALSE) {
+          // Check for the word 'entities', which I want to replace.
+          if (strpos($error_val->getUntranslatedString(), '@entity_type_plural matching') == TRUE) {
+            // Get the original args to pass into the new message.
+            $original_args = $error_val->getArguments();
+            // Re-construct the error.
+            $error_val->__construct("There are no Occupational Area of Interest matching the name  '%value'", $original_args);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function event_permission_page_attachments_alter(array &$attachments) {
+  $attachments['#attached']['library'][] = 'event_permission/event';
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function event_permission_preprocess_page(&$variables) {
+  $nid = $_SESSION['event_id'];
+  $resource_inner_ids = [];
+  if ($nid != NULL) {
+    $node_event = Node::load($nid);
+    $event_field_info_desk_graphic_1 = "";
+    $event_field_info_desk_graphic_2 = "";
+    $information_doc = "";
+    if ($node_event instanceof NodeInterface) {
+      if (!empty($node_event->field_info_desk_graphic_1->entity)) {
+        $event_field_info_desk_graphic_1 = file_create_url($node_event->field_info_desk_graphic_1->entity->getFileUri());
+      }
+      if (!empty($node_event->field_info_desk_graphic_1->entity)) {
+        $event_field_info_desk_graphic_2 = file_create_url($node_event->field_info_desk_graphic_2->entity->getFileUri());
+      }
+    }
+
+    $variables['event_field_info_desk_graphic_1'] = $event_field_info_desk_graphic_1;
+    $variables['event_field_info_desk_graphic_2'] = $event_field_info_desk_graphic_2;
+
+    $database = \Drupal::database();
+    $query = $database->query("SELECT * FROM node__field_register_with_events WHERE bundle = 'information_desk' AND field_register_with_events_target_id = $nid ");
+    $result = $query->fetchAll();
+    $node_information = Node::load($result[0]->entity_id);
+    if ($node_information instanceof NodeInterface) {
+      $information_doc = file_create_url($node_information->field_event_instructions_documen->entity->getFileUri());
+    }
+    $variables['information_doc'] = $information_doc;
+
+    $database = \Drupal::database();
+    $query_resource_inner = $database->query("SELECT * FROM node__field_register_with_events WHERE bundle = 'booth' AND field_register_with_events_target_id = $nid ");
+    $result_resource_inner = $query_resource_inner->fetchAll();
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node instanceof NodeInterface) {
+      foreach ($result_resource_inner as $r_r_i) {
+
+        // If ($r_r_i->entity_id != $node->id()) {.
+        $resource_inner_ids[] = $r_r_i->entity_id;
+        // }
+      }
+      $position_node = array_search($node->id(), $resource_inner_ids);
+      $node_previous = $position_node - 1;
+      $node_next = $position_node + 1;
+      if ($node_previous == -1) {
+        $node_previous = count($resource_inner_ids) - 1;
+      }
+      if ($node_next == count($resource_inner_ids)) {
+        $node_next = 0;
+      }
+      $variables['resource_inner_ids_previous'] = $resource_inner_ids[$node_previous];
+      $variables['resource_inner_ids_next'] = $resource_inner_ids[$node_next];
+    }
+
+  }
+
+}

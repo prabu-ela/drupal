@@ -1,0 +1,8 @@
+name: 'DrupalChat'
+description: 'DrupalChat Module'
+type: module
+package: custom
+configure: drupalchat.settings_form
+core_version_requirement: ^8 || ^9
+project: 'drupalchat'
+datestamp: 1484026389

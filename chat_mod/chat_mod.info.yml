@@ -1,0 +1,5 @@
+name: 'Chatmod module'
+description: 'This Module Allows customize the ifly chat Drupal chat module'
+type: module
+package: custom
+core_version_requirement: ^8 || ^9

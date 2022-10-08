@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file
+ * Marcom Event Form Avatar Image Render.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function mg_formavatar_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form_id == 'node_event_form'||$form_id == 'node_event_edit_form') {
+    $form['#attached']['library'][] = 'mg_formavatar/avatar_js';
+  }
+  // node_booth_edit_formSkip.
+  if ($form_id == 'node_booth_form'||$form_id == 'node_booth_edit_form') {
+    $form['#attached']['library'][] = 'mg_formavatar/booth_js';
+  }
+
+  if ($form_id == 'node_auditorium_form'||$form_id == 'node_auditorium_edit_form') {
+    $form['#attached']['library'][] = 'mg_formavatar/auditorium_js';
+  }
+  if ($form_id == 'node_resource_center_form'||$form_id == 'node_resource_center_edit_form') {
+    // $form['#attached']['library'][] = 'mg_formavatar/resourcecenter_js';
+  }
+
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function mg_formavatar_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  // mg_home_page,mg_event_links,mg_exhibit_hall.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  $event = [];
+  if ($node instanceof NodeInterface) {
+
+    $nid = $node->id();
+    $node_data = Node::load($nid);
+    if ($view->id() == 'mg_exhibit_hall' &&  $view->getDisplay()->display['id'] == 'block_4') {
+
+      if ($node->bundle() == 'event1i') {
+        foreach ($query->where as &$condition_group) {
+          foreach ($condition_group['conditions'] as &$condition) {
+            if ($condition['field'] == 'node_field_data.nid') {
+
+              $condition = [
+                'field' => 'node_field_data.nid',
+                'value' => $nid,
+                'operator' => '=',
+              ];
+            }
+          }
+        }
+      }
+      elseif ($node->bundle() == 'event' || $node->bundle() == 'exhibit_hall' || $node->bundle() == 'auditorium' || $node->bundle() == 'booth' || $node->bundle() == 'information_desk' || $node->bundle() == 'lounge' || $node->bundle() == 'resource_center') {
+        $event = $node_data->field_register_with_events;
+        $uid = '';
+        $eventval = [];
+        if ($node->bundle() != 'event') {
+          foreach ($event as $key => $value) {
+            $eventval[] = $value->target_id;
+          }
+        }
+        else {
+          $eventval[0] = $nid;
+        }
+
+        // Traverse through the 'where' part of the query.
+        foreach ($query->where as &$condition_group) {
+          foreach ($condition_group['conditions'] as &$condition) {
+            if ($condition['field'] == 'node__field_register_with_events.field_register_with_events_target_id') {
+              $condition = [
+                'field' => 'node__field_register_with_events.field_register_with_events_target_id',
+                'value' => $eventval,
+                'operator' => 'in',
+              ];
+            }
+
+            if ($condition['field'] == 'node_field_data.nid') {
+              $condition = [
+                'field' => 'node_field_data.nid',
+                'value' => $eventval,
+                'operator' => '=',
+              ];
+            }
+
+          }
+        }
+
+      }
+    }
+  }
+
+}

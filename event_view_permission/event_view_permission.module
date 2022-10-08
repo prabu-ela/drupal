@@ -1,0 +1,177 @@
+<?php
+
+/**
+ * @file
+ * Marcom Event Permission View Contextual Filter View.
+ */
+
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function event_view_permission_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form_id == "node_presentation_form" || $form_id == "node_presentation_edit_form") {
+    $form['field_register_with_events']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_presentation_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_register_with_events')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $form['field_register_with_events']['widget']['#default_value']);
+    }
+  }
+
+  if ($form_id == "node_booth_form" || $form_id == "node_booth_edit_form") {
+
+    $form['field_register_with_events']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_booth_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_register_with_events')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+
+      $session->set('org_id', $form['field_register_with_events']['widget']['#default_value']);
+
+    }
+  }
+
+  if ($form_id == "node_event_form" || $form_id == "node_event_edit_form") {
+    $form['field_event_representatives']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_event_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_event_representatives')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $form['field_event_representatives']['widget']['#default_value']);
+    }
+
+    $form['field_conference_info_page']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+  }
+
+  if ($form_id == "node_document_form" || $form_id == "node_document_edit_form") {
+
+    $form['field_register_with_events']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_document_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_register_with_events')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $form['field_register_with_events']['widget']['#default_value']);
+    }
+
+    $form['field_conference_info_page']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+  }
+
+  if ($form_id == "node_video_form" || $form_id == "node_video_edit_form") {
+
+    $form['field_register_with_events']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+
+    if ($form_id == 'node_document_edit_form') {
+      $node = $form_state->getFormObject()->getEntity();
+      $org_value = $node->get('field_register_with_events')->getString();
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $org_value);
+    }
+    else {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->set('org_id', $form['field_register_with_events']['widget']['#default_value']);
+    }
+
+    $form['field_conference_info_page']['widget']['#ajax'] = [
+      'callback' => 'checkboxes_ajax_callback',
+      'wrapper' => 'status',
+      'event' => 'change',
+    ];
+  }
+
+}
+
+/**
+ * Ajax Call back for the filed event change.
+ */
+function checkboxes_ajax_callback(array &$form, FormStateInterface $form_state) {
+  $org = $form_state->getTriggeringElement();
+  $request = \Drupal::request();
+  $session = $request->getSession();
+  $org_id = $form_state->getValue('field_register_with_events');
+  $session->remove('org_id');
+  $session->set('org_id', $org_id[0]['target_id']);
+  return $form;
+}
+
+/**
+ * To change field_register_with_events_target_id in views.
+ */
+function event_view_permission_views_pre_build(ViewExecutable $view) {
+  $request = \Drupal::request();
+  $session = $request->getSession();
+
+  if ($view->id() == 'list_of_booths' || $view->id() == 'event_booth_representatives') {
+    \Drupal::logger('some_channel_name')->warning($session->get('org_id'));
+    $view->filter['field_register_with_events_target_id']->value['value'] = $session->get('org_id');
+  }
+  if ($view->id() == 'list_of_videos' || $view->id() == 'booth_or_presentation') {
+    $view->filter['field_register_with_events_target_id']->value['value'] = $session->get('org_id');
+  }
+  if ($view->id() == 'list_of_documents') {
+    $view->filter['field_register_with_events_target_id']->value['value'] = $session->get('org_id');
+  }
+
+}

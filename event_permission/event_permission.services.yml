@@ -1,0 +1,5 @@
+services:
+  event_permission.customservices:
+    class: Drupal\event_permission\Services\pagedata
+    arguments: []
+    # twig.config: { debug: true } 

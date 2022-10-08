@@ -1,0 +1,11 @@
+event_permission.my_modal:
+  path: 'modals/my-modal'
+  defaults:
+    _controller: '\Drupal\event_permission\Controller\MyModalController::openMyModal'
+    _title: 'My Modal'
+  options:
+    parameters:
+      node:
+        type: entity:node
+  requirements:
+    _permission: 'access content'

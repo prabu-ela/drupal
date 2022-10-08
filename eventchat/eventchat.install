@@ -1,0 +1,111 @@
+<?php
+
+/**
+ * @file
+ * Schema for the database event chat.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function eventchat_install() {
+  \Drupal::messenger()->addMessage(t('The EventChat module installed successfully.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function eventchat_uninstall() {
+  \Drupal::messenger()->addMessage(t('The EventChat module uninstalled successfully.'));
+}
+
+/**
+ * Implements hook_schema().
+ */
+function eventchat_schema() {
+  $schema = [];
+
+  // Schema for eventchat queue.
+  $schema['eventchat_queue'] = [
+    'fields' => [
+
+      'qid' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Queue id number.',
+      ],
+
+      'uid' => [
+        'description' => 'Id of the user who requested the chat.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ],
+
+      'type' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The type of enqueued message.',
+      ],
+
+      'handoff' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'uid of rep assigned to chat',
+      ],
+
+      'thread' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'a store of the chat history',
+      ],
+
+      'details' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'Initial Question',
+      ],
+
+      'status' => [
+        'description' => 'The current status of the thread: 0=unassigned, 1=engaged, 3=cancelled',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'on update' => function () {
+                  return 'NOW()';
+        },
+      ],
+
+      'modified' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'on update' => function () {
+                  return 'NOW()';
+        },
+      ],
+
+      'resolved' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => [
+      'qid',
+    ],
+  ];
+
+  return $schema;
+}

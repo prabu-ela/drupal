@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Adding Custom Menus for the event.
+ */
+
+use Drupal\Core\Url;
+use Drupal\views\Views;
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function mg_dynamic_menu_preprocess_page(&$variables) {
+
+  // Accessing user object.
+  $user_object = \Drupal::EntityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
+  $target_id = $user_object->field_register_with_events->getValue();
+
+  if (!empty($target_id)) {
+    $args = [$target_id[0]['target_id']];
+    $view = Views::getView('my_exhibit_hall_sub_menu');
+    if (is_object($view)) {
+      $view->setArguments($args);
+      $view->setDisplay('block_1');
+      $view->preExecute();
+      $view->execute();
+      $content = $view->buildRenderable('block_1', $args);
+
+      // Fetching View result.
+      $result = $content['#view']->result;
+      $options = ['absolute' => FALSE];
+      foreach ($result as $value) {
+        $menu = [];
+        $menu['title'] = $value->_entity->title->value;
+        $menu['nid'] = $value->nid;
+        $menu['url'] = Url::fromRoute('entity.node.canonical', ['node' => $value->nid], $options);
+        $variables['menu_data'][] = $menu;
+      }
+
+      // Attaching js for dynamic menus.
+      $variables['#attached']['library'][] = 'mg_dynamic_menu/dynamic_menu';
+      $variables['#attached']['drupalSettings']['mg_dynamic_menu']['menu'] = $variables['menu_data'];
+    }
+  }
+
+  // Fetching Current path of the page.
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  if ($result == '/lounge') {
+    $variables['#attached']['library'][] = 'mg_dynamic_menu/chat_header_menu';
+  }
+}

@@ -1,0 +1,13 @@
+chat2:
+  version: 1.x
+  css:
+    layout:
+      css/event_chat.css: {}
+    theme:
+      css/event_chat.css: {}
+  js:
+    js/event_chat.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal

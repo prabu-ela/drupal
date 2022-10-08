@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Install File for ChatMods module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function chat_mod_install() {
+  \Drupal::messenger()->addMessage(t('The Chat Mod module installed successfully.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function chat_mod_uninstall() {
+  \Drupal::messenger()->addMessage(t('The Chat Mod module uninstalled successfully.'));
+}
+
+/**
+ * Schema for Room id store.
+ */
+function chat_mod_schema() {
+  $schema = [];
+  $schema['chatmods_chat_status'] = [
+    'description' => 'The table to check for online chatters',
+    'fields' => [
+      'uid' => [
+        'description' => 'The user id of the chatter.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'status' => [
+        'description' => 'Whether a user is online (1 : online, 0 : offline)',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'timestamp' => [
+        'description' => 'Timestamp when we last know user was online',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'available' => [
+        'description' => 'Whether a user is chatting with another user (0 : chatting, 1 : available).',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'unique keys' => [
+      'uid' => ['uid'],
+    ],
+    'primary key' => ['uid'],
+  ];
+
+  $schema['chatmods_chat_rooms'] = [
+    'description' => 'The table to get room id of I-fly chat',
+    'fields' => [
+      'nid' => [
+        'description' => 'The node id of the event.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+
+      'room_id' => [
+        'description' => 'The I-fly chat room id of the chatter.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+
+      'room_name' => [
+        'description' => 'The I-fly chat room name of the chatter.',
+        'type' => 'varchar',
+        'length' => 255,
+            // 'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+  ];
+
+  return $schema;
+
+}
