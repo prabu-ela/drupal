@@ -1,0 +1,14 @@
+custom_product_migration.product_migration:
+  path: '/product_migration/product'
+  defaults:
+    _form: 'Drupal\custom_product_migration\Form\MigrateProductForm'
+    _title: 'Product Migration Example'
+  requirements:
+    _permission: 'access content'
+custom_product_migration.paragraph_migration:
+  path: '/product_migration/productparagraph'
+  defaults:
+    _form: 'Drupal\custom_product_migration\Form\ParagraphMigrationForm'
+    _title: 'Product Paragraph Migration Example'
+  requirements:
+    _permission: 'access content'

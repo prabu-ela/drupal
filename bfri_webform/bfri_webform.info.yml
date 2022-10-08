@@ -1,0 +1,5 @@
+name: Custom Webform JS
+type: module
+description: 'A custom module for webfor Javascript'
+package: custom
+core_version_requirement: ^8 || ^9

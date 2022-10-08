@@ -1,0 +1,12 @@
+id: migrate_drupal_7
+label: 'Import from Drupal 7'
+dependencies:
+  enforced:
+    module:
+      - custom_migration
+description: 'Custom Migrations from D7 to D8'
+source_type: 'Drupal 7'
+module: null
+shared_configuration:
+  source:
+    key: migrate_d7

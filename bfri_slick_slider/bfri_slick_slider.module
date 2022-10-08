@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Contains bfri_slick_slider.module.
+ */
+
+/**
+ * Implements hook_preprocess_page(&$variables)
+ */
+function bfri_slick_slider_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'bfri_slick_slider/slick';
+}

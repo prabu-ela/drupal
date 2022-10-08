@@ -1,0 +1,153 @@
+bfri_calculate_profit.profit_calculate:
+  version: 1.0
+  js:
+    js/profitcalculate.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+bfri_calculate_profit_hide_show:
+  version: 1.0
+  js:
+    js/hide.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+custom_print:
+  version: 1.X
+  css:
+    theme:
+      css/printable.css: {}
+  js:
+    js/printThis.js: {}
+    js/itdPrint.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/jquery.once
+    - core/drupal
+purchase_order_calculation:
+  version: 1.X
+  js:
+    js/PurchaseOrder.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+hide_image:
+  version: 1.X
+  js:
+    js/hideimage.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+youtube_player:
+  version: 1.X
+  js:
+    js/youtube.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+resource_webform:
+  version: 1.X
+  js:
+    js/MiniresourceWebform.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+popup_top:
+  version: 1.X
+  js:
+    js/popup.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+billing_address:
+  version: 1.X
+  js:
+    js/billing.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+scroll_top_direct_sale:
+  version: 1.X
+  js:
+    js/directsales.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+cart_print:
+  version: 1.X
+  css:
+    theme:
+      css/cartPrint.css: {}
+  js:
+    js/printThis.js: {}
+    js/cartPrint.js: {}
+blog_scrolltop:
+  version: 1.X
+  css:
+    theme:
+      css/blog.css: {}
+  js:
+    js/blogScrollTop.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+price_programe:
+  version: 1.X
+  js:
+    js/priceprogramhide.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+more_info:
+  version: 1.X
+  js:
+    js/moreinfo.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+    - core/jquery.once
+selectwebform:
+  version: 1.X
+  js:
+    js/selectform.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+    - core/jquery.once
+gdpr:
+  version: 2.X
+  js:
+    js/site_gdpr.js: {}
+  dependencies:
+    - core/jquery
+    - core/query
+    - core/drupalSettings
+    - core/drupal
+    - core/jquery.once

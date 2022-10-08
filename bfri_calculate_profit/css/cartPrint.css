@@ -1,0 +1,83 @@
+.printable_print {
+  display: none !important;
+}
+
+@media print {
+  header .navbar>.container .navbar-brand img {
+    display: block !important;
+    text-align: center;
+    margin: 0 auto;
+    max-width: 100px;
+  }
+  h1,
+  h2 {
+    font-size: 0px !important;
+}
+  .field--name-order-number .field__label {
+    margin-right: 1%;
+    float: left;
+  }
+  .field__item {
+    text-align: left;
+  }
+  .order-information {
+    border: 1px solid #eff1f2 !important;
+    padding: 20px !important;
+  }
+  .block-system-main-block .customer-information {
+    float: left;
+    width: 100%;
+  }
+  .field.field--name-mail.field--type-email.field--label-inline,
+  .customer-information__shipping,
+  .customer-billing {
+    width: 33.3%;
+    float: left;
+    border: 1px solid #eff1f2;
+    min-height: 250px;
+    padding: 20px !important;
+  }
+  .order-information .field--name-placed,
+  .order-information .field--name-state {
+    width: 48%;
+    float: left;
+    margin-top: 2%;
+  }
+  .order-information .field--type-entity-reference {
+    float: left;
+    width: 100%;
+    border-top: 1px solid #eff1f2;
+    margin-top: 2%;
+  }
+  .user-logged-in .action-links .nav-link a,
+  #print-this-area {
+    display: none;
+  }
+  a.btn.btn-secondary,
+  span.ml-2.d-none.d-md-inline {
+    opacity: 0 !important;
+  }
+
+  .path-cart #block-bigfundraising-content #cnt-shopping,
+  .path-cart .block__our__products,
+  .path-cart footer,
+  .path-cart .alert {
+    display: none !important;
+  }
+
+  .block__our__products {
+    display: none;
+  }
+
+  #edit-submit {
+    display: none;
+  }
+
+  #edit-shopping {
+    display: none;
+  }
+
+  #edit-checkout {
+    display: none;
+  }
+}

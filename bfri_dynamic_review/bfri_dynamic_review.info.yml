@@ -1,0 +1,10 @@
+name: 'BFRI Dynamic Review'
+description: 'This Module Allows Creat Dynamic Review for the users'
+type: module
+package: custom
+core_version_requirement: ^8 || ^9
+
+dependencies:
+  - drupal:views
+  - webform:webform
+  - smtp:smtp

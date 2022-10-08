@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Contains bfri_webform.module.
+ */
+
+/**
+ * Implements hook_preprocess_page(&$variables)
+ */
+function bfri_webform_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'bfri_webform/inputmask_webform';
+}

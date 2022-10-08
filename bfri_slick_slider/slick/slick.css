@@ -1,0 +1,203 @@
+/* Slider */
+.slick-slider {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -khtml-user-select: none;
+  -ms-touch-action: pan-y;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slick-list {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.slick-list:focus {
+  outline: none;
+}
+
+.slick-list.dragging {
+  cursor: pointer;
+  cursor: hand;
+}
+
+.slick-slider .slick-track,
+.slick-slider .slick-list {
+  -webkit-transform: translate3d(0, 0, 0);
+  -moz-transform: translate3d(0, 0, 0);
+  -ms-transform: translate3d(0, 0, 0);
+  -o-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+.slick-track {
+  position: relative;
+  top: 0;
+  left: 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.slick-track:before,
+.slick-track:after {
+  display: table;
+  content: '';
+}
+
+.slick-track:after {
+  clear: both;
+}
+
+.slick-loading .slick-track {
+  visibility: hidden;
+}
+
+.slick-slide {
+  display: none;
+  float: left;
+  height: 100%;
+  min-height: 1px;
+}
+
+[dir='rtl'] .slick-slide {
+  float: right;
+}
+
+.slick-slide img {
+  display: block;
+}
+
+.slick-slide.slick-loading img {
+  display: none;
+}
+
+.slick-slide.dragging img {
+  pointer-events: none;
+}
+
+.slick-initialized .slick-slide {
+  display: block;
+}
+
+.slick-loading .slick-slide {
+  visibility: hidden;
+}
+
+.slick-vertical .slick-slide {
+  display: block;
+  height: auto;
+  border: 1px solid transparent;
+}
+
+.slick-arrow.slick-hidden {
+  display: none;
+}
+
+button.slick-arrow {
+  background-color: #fff !important;
+  width: auto;
+  z-index: 1;
+  position: absolute;
+  top: 40%
+}
+
+.slick-prev:before,
+.slick-next:before {
+  display: none;
+}
+
+.slick-slider .slick-prev {
+  left: -6%;
+}
+
+.slick-slider .slick-next {
+  right: -6%;
+}
+
+
+@media screen and (min-width: 1199px) {
+  .page-node-type-product-display.toolbar-horizontal #edit-goto-product {
+      position: absolute;
+      right: 1%;
+      top: 6.25%;
+  }
+
+  .page-node-type-product-display.toolbar-horizontal  .layout-region.layout-region-node-main {
+      position: relative;
+  }
+}
+
+
+@media screen and (max-width: 1516px) {
+  .page-node-type-product-display.toolbar-horizontal #edit-goto-product {
+    top: 7.55%;
+  }
+}
+
+@media screen and (max-width: 1379px) {
+  .page-node-type-product-display.toolbar-horizontal #edit-goto-product {
+    top: 7.78%;
+  }
+}
+
+@media screen and (max-width: 1349px) {
+  .page-node-type-product-display.toolbar-horizontal #edit-goto-product {
+    top: 7.7%;
+  }
+}
+
+@media screen and (max-width: 1314px) {
+  .page-node-type-product-display.toolbar-horizontal #edit-goto-product {
+    top: 7.49%;
+  }
+}
+
+
+/*Share this module icon update*/
+.stp_arrow img {
+  visibility: hidden;
+  margin: 0;
+}
+
+.stp_arrow img:hover {
+  margin-top: 0;
+}
+
+.stp_arrow img::before {
+  background: url('/themes/custom/bigfundraising/images/bfr_icons/bfr_arrow_left_black.svg') no-repeat;
+  content: '';
+  padding: 12px;
+  display: block;
+  background-size: 11px;
+  visibility: visible;
+  cursor: pointer;
+}
+
+.stp_up::before {
+  transform: rotate(90deg);
+}
+
+.stp_left::before {
+  margin-left: 7px;
+}
+
+.stp_right::before {
+  transform: rotate(180deg);
+  margin-left: -5px;
+}
+
+.stp_down::before {
+  transform: rotate(270deg);
+  margin-left: 5px;
+}

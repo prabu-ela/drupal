@@ -1,0 +1,7 @@
+review:
+  version: 1.x
+  js:
+    js/reveiw_hide.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal

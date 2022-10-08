@@ -1,0 +1,7 @@
+bfri_calculate_profit.purchase_order:
+  path: '/purchase_order_calculation/{nid}'
+  defaults:
+    _controller: '\Drupal\bfri_calculate_profit\Controller\PurchaseOrderController::calculatePrice'
+    _title: 'Purchase Order Calculation'
+  requirements:
+    _permission: 'access content'

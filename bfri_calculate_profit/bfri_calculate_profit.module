@@ -1,0 +1,502 @@
+<?php
+
+/**
+ * @file
+ * Commerce enhancement functionalities.
+ */
+
+use Drupal\Core\Url;
+use Drupal\views\Views;
+use Drupal\node\Entity\Node;
+use Drupal\file\Entity\File;
+use Drupal\node\NodeInterface;
+use Drupal\media\Entity\Media;
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Asset\AttachedAssetsInterface;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bfri_calculate_profit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Setting Minimum Quantity.
+  if (in_array('views_form_commerce_cart_form_default', $form['#theme'])) {
+    $data = $form['output'][0]['#view']->result;
+    $productTermId = [];
+    $product_ids = [];
+    if (!empty($data)) {
+      $i = 0;
+      foreach ($data as $value) {
+        $node_data = Node::load($value->field_product_reference_commerce_product_field_data_nid);
+        $product_ids[] = $value->field_product_reference_commerce_product_field_data_nid;
+        $profit = $node_data->field_product_reference->entity->field_calculator_attributes_para;
+        $productTermId[] = $node_data->field_product_reference->entity->field_product_term->target_id;
+        $tag = [];
+
+        foreach ($profit as $val) {
+          $tag[] = $val->entity->field_min->value;
+        }
+        $min = 1;
+        $min = min($tag);
+        $form['edit_quantity'][$i]['#min'] = $min;
+        $i++;
+      }
+    }
+
+    // Attaching js for hiding print and releated product if no cart added.
+    if (!empty($productTermId)) {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->remove('prduct_term_id');
+      $session->set('prduct_term_id', $productTermId);
+    }
+
+    // Adding Product id for avoiding duplication.
+    if (!empty($product_ids)) {
+      $request = \Drupal::request();
+      $session = $request->getSession();
+      $session->remove('prduct_id');
+      $session->set('prduct_id', $product_ids);
+    }
+
+    // Continue shopping button.
+    $form['shopping'] = [
+      '#type' => 'submit',
+      '#value' => t('Continue Shopping'),
+      '#prefix' => '<div class="form-actions btn form-wrapper continue shopping" id="cnt-shopping">',
+      '#suffix' => '</div>',
+      '#submit' => ['bfri_calculate_profit_continue_shopping'],
+      '#limit_validation_errors' => [],
+    ];
+  }
+
+  // Adding Registration Title.
+  if ($form_id == 'user_register_form') {
+    $config = \Drupal::config('super_login.settings');
+    $form['title'] = [
+      '#markup' => '<p class="login-title">' . $config->get('super_login.new_account_text') . '</p>',
+      '#weight' => -100,
+    ];
+  }
+
+  // Getting current path.
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  if ($result == '/cart') {
+    // Attaching js for hiding print and releated product if no cart added.
+    $form['#attached']['library'][] = 'bfri_calculate_profit/bfri_calculate_profit_hide_show';
+
+    // Attaching js for cart print.
+    $form['#attached']['library'][] = 'bfri_calculate_profit/cart_print';
+  }
+
+  // Purchase Order Calculation.
+  if ($form_id == 'webform_submission_purchase_order_form_add_form') {
+    $form['#attached']['library'][] = 'bfri_calculate_profit/purchase_order_calculation';
+  }
+
+  // Product Edit Redirect page.
+  if ($form_id == "node_product_display_edit_form") {
+    $product_id = $form['field_product_reference']['widget'][0]['target_id']['#default_value']->product_id->value;
+    if (!empty($product_id)) {
+      $form['goto_product'] = [
+        '#type' => 'submit',
+        '#value' => t('Edit Product'),
+        '#weight' => 13,
+        '#submit' => ['goto_poduct_page'],
+      ];
+    }
+  }
+
+  if ($form_id == "commerce_checkout_flow_multistep_default") {
+
+    if (isset($form['login']['register'])) {
+      $form['login']['register']['link'] = [
+        '#type' => 'link',
+        "#weight" => 0,
+        '#title' => t('Privacy Policy'),
+        '#url' => Url::fromUri('entity:node/285'),
+        '#attributes' => [
+          'class' => 'privacy__link use-ajax',
+          'data-dialog-type' => 'dialog',
+        ],
+      ];
+    }
+
+    // Removing Recalculate Shipping Button.
+    if (isset($form['shipping_information']['recalculate_shipping'])) {
+      $form['shipping_information']['recalculate_shipping'] = ['#access' => FALSE];
+    }
+
+    // Changing Company to Group in Checkout Page.
+    if (isset($form['shipping_information']['shipping_profile']['address'])) {
+      $form['shipping_information']['shipping_profile']['address']['widget'][0]['address']['#after_build'][] = 'bfri_calculate_profit_customize_address';
+    }
+
+    // Changing Company to Group in Checkout Page.
+    if (isset($form['payment_information']['add_payment_method']['billing_information'])) {
+      $form['payment_information']['add_payment_method']['billing_information']['address']['widget'][0]['address']['#after_build'][] = 'bfri_calculate_profit_customize_address';
+    }
+
+    // Changing submit label for purchase order.
+    if (isset($form['#step_id'])) {
+      if ($form['#step_id'] == 'review') {
+        $purchase_method = $form['review']['payment_information']['summary']['#commerce_payment_method']->type->value;
+        if ($purchase_method == 'purchase_order') {
+          $form['actions']['next']['#value'] = t('complete purchase');
+        }
+      }
+    }
+
+    // Pop-up for credit card.
+    if (isset($form['payment_information']['payment_method'])) {
+      $form['payment_information']['payment_method']['link'] = [
+        '#type' => 'link',
+        "#weight" => 0,
+        '#title' => t('What is this?'),
+        '#url' => Url::fromUri('entity:node/3700'),
+        '#attributes' => [
+          'class' => 'privacy__link what-is-this credit-pop use-ajax',
+          'data-dialog-type' => 'dialog',
+        ],
+      ];
+
+      // Js for transfering the billing address.
+      $form['#attached']['library'][] = 'bfri_calculate_profit/billing_address';
+    }
+  }
+
+  // Purchase order form remove 1545 product id.
+  if ($form_id == 'webform_submission_purchase_order_form_add_form') {
+    unset($form['elements']['product_1']['1st_product']['#options']['1545']);
+    unset($form['elements']['product_2']['2nd_product']['#options']['1545']);
+    unset($form['elements']['product_3']['3rd_product']['#options']['1545']);
+  }
+
+  // Change Profile Label Company to Group.
+  if ($form_id == 'profile_customer_address-book-add_form' || $form_id == "profile_customer_address-book-edit_form") {
+    $form['address']['widget'][0]['address']['#after_build'][] = 'bfri_calculate_profit_customize_address';
+  }
+
+  // Pop-up Scroll Top.
+  $form['#attached']['library'][] = 'bfri_calculate_profit/popup_top';
+
+  // Webform SHS field in webfrom with image Magnifier.
+  if ($form_id == "webform_submission_pack_by_unit_or_seller_add_form" || $form_id == "webform_submission_pack_by_unit_or_seller_add_form") {
+    $form['#attached']['library'][] = 'bfri_calculate_profit/selectwebform';
+  }
+}
+
+/**
+ * Redirecting to Direct sale fundraisers.
+ */
+function bfri_calculate_profit_continue_shopping($form, &$form_state) {
+  global $base_url;
+  $redirect = new RedirectResponse($base_url . '/direct-sale-fundraisers#continue-shopping-1');
+  $redirect->send();
+  return $form;
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function bfri_calculate_profit_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  if ($view->id() == "brochure_catagories" && $view->getDisplay()->display['id'] == 'block_8') {
+
+    // Getting Product term id from the session.
+    $request = \Drupal::request();
+    $session = $request->getSession();
+    $termId = $session->get('prduct_term_id');
+    $termId = empty($termId) ? 0 : $termId;
+    $product_id_value = $session->get('prduct_id');
+    $product_id_value = empty($product_id_value) ? 0 : $product_id_value;
+
+    // Traverse through the 'where' part of the query.
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        if ($condition['field'] == 'commerce_product_field_data_node__field_product_reference__commerce_product__field_product_term.field_product_term_target_id = :commerce_product__field_product_term_field_product_term_target_id') {
+          $condition = [
+            'field' => 'commerce_product_field_data_node__field_product_reference__commerce_product__field_product_term.field_product_term_target_id',
+            'value' => $termId,
+            'operator' => 'in',
+          ];
+        }
+        if ($condition['field'] == 'node_field_data.nid') {
+          $condition = [
+            'field' => 'node_field_data.nid',
+            'value' => $product_id_value,
+            'operator' => 'NOT IN',
+          ];
+        }
+      }
+    }
+  }
+
+  // Related Reviews for the Mini Resource page.
+  if ($view->id() == "customer_review" && $view->getDisplay()->display['id'] == 'block_16') {
+
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node instanceof NodeInterface) {
+      // You can get nid and anything else you need from the node object.
+      $nid = $node->id();
+    }
+    $node_data = Node::load($nid);
+    $tid = $node_data->field_review_type->target_id;
+
+    // Early Exit.
+    if (empty($tid)) {
+      return FALSE;
+    }
+
+    // Traverse through the 'where' part of the query.
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+
+        if ($condition['field'] == 'node__field_vocabulary_1.field_vocabulary_1_target_id = :node__field_vocabulary_1_field_vocabulary_1_target_id') {
+          $condition = [
+            'field' => 'node__field_vocabulary_1.field_vocabulary_1_target_id',
+            'value' => $tid,
+            'operator' => '=',
+          ];
+        }
+      }
+    }
+
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bfri_calculate_profit_preprocess_page(&$variables) {
+  // Performance optiomization youTube Vedio.
+  $variables['is_front'] = \Drupal::service('path.matcher')->isFrontPage();
+  if ($variables['is_front']) {
+    $variables['#attached']['library'][] = 'bfri_calculate_profit/hide_image';
+  }
+
+  if (isset($variables['node'])) {
+    $typeName = $variables['node']->bundle();
+
+    if ($typeName == 'mini_resource') {
+      $variables['#attached']['library'][] = 'bfri_calculate_profit/resource_webform';
+    }
+  }
+
+  // For the current raw path (the un-aliased Drupal path):
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  if ($result == '/direct-sale-fundraisers') {
+    $variables['#attached']['library'][] = 'bfri_calculate_profit/scroll_top_direct_sale';
+  }
+
+  // Hide Price Programe by using the button.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node instanceof NodeInterface) {
+    // You can get nid and anything else you need from the node object.
+    $nid = $node->id();
+    $bundle = $node->bundle();
+  }
+
+  if ($bundle == 'brochures') {
+    $node_data = Node::load($nid);
+    $flag = $node_data->field_hide_add_a_prize_program->value;
+    $variables['#attached']['library'][] = 'bfri_calculate_profit/price_programe';
+    $variables['#attached']['drupalSettings']['bfri_calculate_profit']['flag'] = $flag;
+  }
+
+  // Adding More Information in the cata. pages.
+  $page_type = '';
+  if ($result == '/blog') {
+    $page_type = 1;
+  }
+  $variables['#attached']['library'][] = 'bfri_calculate_profit/more_info';
+  $variables['#attached']['drupalSettings']['bfri_calculate_profit']['page_type'] = $page_type;
+
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function bfri_calculate_profit_preprocess_html(&$variables) {
+  global $base_url;
+
+  // For the current raw path (the un-aliased Drupal path):
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  $variables['url'] = $base_url . $result;
+
+  // Product price validity.
+  $variables['price_validity'] = date('Y') . "-12-31";
+
+  // Schema.org for product and broucher page.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node instanceof NodeInterface) {
+    // You can get nid and anything else you need from the node object.
+    $nid = $node->id();
+    $node_data = Node::load($nid);
+  }
+  if (!empty($node_data)) {
+    $bundle = $node_data->bundle();
+    if ($bundle == 'product_display') {
+      $variables['product_title'] = $node_data->field_product_reference->entity->title->value;
+
+      // Media Id.
+      $media_id = $node_data->field_product_reference->entity->field_media_product_image->target_id;
+      $media = Media::load($media_id);
+      if ($media->field_media_image->target_id) {
+        $uri = $media->field_media_image->entity->getFileUri();
+        $media_url = file_create_url($uri);
+        $variables['image_url'] = $media_url;
+      }
+
+      $body_strip_tag = strip_tags($node_data->field_product_reference->entity->body->value);
+      $body_value = substr($body_strip_tag, 0, 200);
+
+      $variables['description'] = $body_value . "...";
+
+      $sellingPrice = trim($node_data->field_product_reference->entity->field_average_price->value);
+      $selPrice = preg_replace('/[^0-9.]/', '', $sellingPrice);
+      $variables['selling_prince'] = number_format((float) $sellingPrice, 2, '.', '');
+    }
+
+    // Schema for Brocheres.
+    if ($bundle == 'brochures') {
+      $variables['product_title'] = $node_data->title->value;
+      $image_id = $node_data->field_brochure_image->target_id;
+      if ($image_id) {
+        $file = File::load($image_id);
+        $url = $file->url();
+        $variables['image_url'] = $url;
+      }
+      $variables['description'] = $node_data->body->summary;
+      $variables['selling_prince'] = $node_data->field_average_price->value;
+    }
+
+    // Product/Brocheres availability out of stock.
+    $stock = $node_data->field_available_or_not_abailable->value;
+    if ($stock == 'not_available') {
+      $variables['stock'] = "https://schema.org/OutOfStock";
+    }
+    else {
+      $variables['stock'] = "https://schema.org/InStock";
+    }
+
+    // Reviews and Rating value from the view.
+    $args = [$nid];
+    $view = Views::getView('customer_review');
+    if (is_object($view)) {
+      $view->setArguments($args);
+      $view->setDisplay('block_17');
+      $view->preExecute();
+      $view->execute();
+      $content = $view->buildRenderable('block_17', $args);
+
+      // Fetching View result.
+      $result = $content['#view']->result;
+
+      $count = count($result);
+      $tot = $i = 0;
+
+      foreach ($result as $value) {
+        $variables['rating'][$i]['name'] = $value->_relationship_entities['reverse__node__field_end_page']->field_testimonial_person->value;
+
+        if (!empty($value->_relationship_entities['reverse__node__field_end_page']->field_star_rating)) {
+          $avg_rating_value = $value->_relationship_entities['reverse__node__field_end_page']->field_star_rating->getvalue('rating');
+          $variables['rating'][$i]['individual_rating'] = $avg_rating_value[0]['rating'] / 20;
+        }
+
+        $variables['rating'][$i]['description_summary'] = $value->_relationship_entities['reverse__node__field_end_page']->body->summary;
+        $variables['rating'][$i]['date'] = date('Y-m-d', $value->_relationship_entities['reverse__node__field_end_page']->created->value);
+
+        $rating_avg = $avg_rating_value[0]['rating'] / 20;
+        $tot += $rating_avg / $count;
+        $i++;
+      }
+      $avg_rating_values = round($tot, 2);
+      $variables['avg_rating'] = empty($avg_rating_values) ? 5 : $avg_rating_values;
+      $variables['no_person'] = empty($count) ? 1 : $count;
+    }
+  }
+}
+
+/**
+ * Custom handler for redirection.
+ */
+function goto_poduct_page($form = [], $form_state = [], $form_id = []) {
+  global $base_url;
+
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node instanceof NodeInterface) {
+    // You can get nid and anything else you need from the node object.
+    $nid = $node->id();
+  }
+
+  $product_id = $form_state->getValue('field_product_reference');
+  $dest_url = "/product/" . $product_id[0]['target_id'] . "/edit?destination=/node/" . $nid;
+  $response = new RedirectResponse($base_url . $dest_url);
+  $response->send();
+  return $form;
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function bfri_calculate_profit_page_attachments_alter(array &$attachments) {
+  $node = \Drupal::routeMatch()->getParameter('node');
+  $typeName = "";
+  if ($node instanceof NodeInterface) {
+    // You can get nid and anything else you need from the node object.
+    $typeName = $node->bundle();
+  }
+  if ($typeName == 'big_events') {
+    $nid = $node->id();
+    $node_load = Node::load($nid);
+    $text = $node_load->field_video_source_code->value;
+    $striptag = str_replace(['<p>', '</p>'], '', $text);
+    $attachments['#attached']['library'][] = 'bfri_calculate_profit/youtube_player';
+    $attachments['#attached']['drupalSettings']['bfri_calculate_profit']['youtube'] = $striptag;
+  }
+  if ($typeName == 'mini_resource') {
+    $attachments['#attached']['library'][] = 'bfri_calculate_profit/resource_webform';
+  }
+}
+
+/**
+ * Helper function for change Company to Grop.
+ */
+function bfri_calculate_profit_customize_address($element, $form_state) {
+  $element['organization']['#title'] = t('Group');
+  return $element;
+}
+
+/**
+ * Implements hook_js_settings_alter().
+ */
+function bfri_calculate_profit_js_settings_alter(array &$settings, AttachedAssetsInterface $assets) {
+  // Add settings MM/YYYY for cridit cart.
+  if (isset($settings['commerceBraintree']['hostedFields']['expirationMonth'])) {
+    $settings['commerceBraintree']['hostedFields']['expirationMonth']['placeholder'] = 'MM';
+    $settings['commerceBraintree']['hostedFields']['expirationYear']['placeholder'] = 'YYYY';
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function bfri_calculate_profit_page_attachments(array &$attachments) {
+
+  $current_path = \Drupal::service('path.current')->getPath();
+  $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+  // Attaching JS for blog scroll top.
+  if ($result == '/blog' || $result == '/resources') {
+    $attachments['#attached']['library'][] = 'bfri_calculate_profit/blog_scrolltop';
+  }
+
+  $attachments['#attached']['library'][] = 'bfri_calculate_profit/gdpr';
+}

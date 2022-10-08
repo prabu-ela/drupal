@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * Contains Dynamic Webforms.
+ */
+
+use Drupal\views\Views;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function bfri_dynamic_review_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form_id == 'webform_submission_customer_review_form_add_form') {
+    $product_id = \Drupal::request()->query->get('id');
+
+    if (!empty($product_id)) {
+      // Load Product Variations.
+      $entity_manager = \Drupal::entityManager();
+      $product_variation = $entity_manager->getStorage('commerce_product_variation')->load((int) $product_id);
+      $product_id_pop = $product_variation->product_id->target_id;
+
+      // Reviews and Rating value from the view.
+      $args = [$product_id_pop];
+      $view = Views::getView('product_review_data');
+      if (is_object($view)) {
+        $view->setArguments($args);
+        $view->setDisplay('block_1');
+        $view->preExecute();
+        $view->execute();
+        $content = $view->buildRenderable('block_1', $args);
+        $result = $content['#view']->result[0]->nid;
+      }
+    }
+
+    if (!empty($result)) {
+      $form['elements']['product_broucher']['#attributes']['disabled'][] = 'disabled';
+      $form['elements']['produtcs']['#default_value'] = $result;
+      $form['elements']['produtcs']['#attributes']['disabled'][] = 'disabled';
+    }
+  }
+
+  // Attaching JS for hiding the * symbol.
+  $form['#attached']['library'][] = 'bfri_dynamic_review/review';
+}
+
+/**
+ * Implements template_preprocess_views_view_fields().
+ */
+function bfri_dynamic_review_preprocess_views_view_field(&$vars) {
+
+  // Review status changed here.
+  if (isset($vars['view']) && ($vars['view']->id() == 'commerce_order_item_table')) {
+
+    if (isset($vars['view']->field)) {
+      if ($vars['field']->field == 'nothing') {
+        $order_id = $vars['row']->_entity->order_id->target_id;
+        $product_id = $vars['row']->commerce_product_variation_field_data_commerce_order_item_va;
+        $reviewed = order_item_reviewed($order_id, $product_id);
+        if (!empty($reviewed)) {
+          $vars['output'] = [
+            '#markup' => 'Reviewed',
+          ];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to check reveiwed or not.
+ */
+function order_item_reviewed($order_item = FALSE, $product_variation = FALSE) {
+
+  $order = \Drupal::entityTypeManager()->getStorage('commerce_order')->load($order_item);
+  $order_id = $order->order_number->value;
+  $data = [];
+  $query = \Drupal::database()->select('bfri_order_review', 'order_review')
+    ->fields('order_review', ['order_id'])
+    ->condition('product_variation', $product_variation)
+    ->condition('order_id', $order_id);
+  $results = $query->execute();
+
+  foreach ($results as $var) {
+    $data = $var;
+  }
+
+  return $data;
+}

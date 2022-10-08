@@ -1,0 +1,5 @@
+name: 'BFRI Calculate Your Profit'
+description: 'This Module Allows To Calculate Your Profit for the Product'
+type: module
+package: custom
+core_version_requirement: ^8 || ^9

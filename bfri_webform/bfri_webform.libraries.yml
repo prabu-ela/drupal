@@ -1,0 +1,10 @@
+inputmask_webform:
+  version: 1.1
+  js:
+    js/jquery.inputmask.bundle.min.js: {}
+    js/inputmask.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+
