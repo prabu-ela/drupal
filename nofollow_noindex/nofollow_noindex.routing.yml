@@ -1,0 +1,9 @@
+nofollow_noindex.routes_config_form:
+  path: '/admin/config/search/nofollow-noindex'
+  defaults:
+    _form: '\Drupal\nofollow_noindex\Form\RoutesConfigForm'
+    _title: 'Nofollow Noindex Settings'
+  requirements:
+    _permission: 'nofollow noindex config page'
+  options:
+    _admin_route: TRUE

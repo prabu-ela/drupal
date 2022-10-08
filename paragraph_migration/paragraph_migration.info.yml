@@ -1,0 +1,7 @@
+name: Paragraph Migration
+type: module
+description: Paragraph Migrations from d7 to d8
+core: 8.x
+package: Custom
+version: 1.0
+core_version_requirement: ^8 || ^9

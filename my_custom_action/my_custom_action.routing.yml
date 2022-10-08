@@ -1,0 +1,42 @@
+my_custom_action.user_cancel_subscription:
+  path: '/user/{subscription_id}/cancel-my-subscription'
+  defaults:
+    _title: 'Cancel Subscription'
+    _form: '\Drupal\my_custom_action\Form\SubscriptionCancelConfirmFormByUser'
+  requirements:
+    _permission: 'delete own product_variation commerce_subscription'
+    id: ^\d+$
+my_custom_action.user_license_subscription:
+  path: '/user/{license_id}/cancel-my-license'
+  defaults:
+    _title: 'Cancel License'
+    _form: '\Drupal\my_custom_action\Form\LicenseCancelConfirmFormByUser'
+  requirements:
+    _permission: 'delete own product_variation commerce_subscription'
+    id: ^\d+$
+my_custom_action.migrate_subscription_orders:
+  path: '/migrate/subscription-orders'
+  defaults:
+    _form: '\Drupal\my_custom_action\Form\MigrateSubscriptionorders'
+    _title: 'Migrate Subscription Orders'
+  requirements:
+    _permission: 'access commerce administration pages'
+  options:
+    _admin_route: TRUE
+my_custom_action.confirm_cancel_order:
+  path: '/admin/cancel/order/{order_id}/confirm'
+  defaults:
+    _form: '\Drupal\my_custom_action\Form\CancelOrderConfirmForm'
+    _title: ''
+  requirements:
+    _permission: 'administer commerce_order'
+    order_id: ^\d+$
+my_custom_action.migrate_subscription_customer:
+  path: '/migrate/subscription-customer'
+  defaults:
+    _form: '\Drupal\my_custom_action\Form\MigrateSubscriptioncustomer'
+    _title: 'Migrate Subscription Customer'
+  requirements:
+    _permission: 'access commerce administration pages'
+  options:
+    _admin_route: TRUE

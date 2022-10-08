@@ -1,0 +1,22 @@
+order_same_as_billing_address:
+  version: 1.x
+  js:
+    js/copy-billing-address-to-delivery-address.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal.ajax
+admin_subscriptions_page:
+  version: 1.x
+  js:
+    js/admin_subscriptions_form_validation.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal.ajax
+quicktabs_active_subscription:
+  version: 1.x
+  js:
+    js/quicktabs_active_subscription.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings

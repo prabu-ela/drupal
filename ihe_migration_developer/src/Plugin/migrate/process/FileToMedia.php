@@ -246,32 +246,84 @@ class FileToMedia extends FileCopy {
       if (!empty($FilesArray)) {
         $FilesObj = reset($FilesArray);
         $fileName = $FilesObj->getFilename();
+        //$extension = $fileName['extension'];
+        $extension = pathinfo($Uri, PATHINFO_EXTENSION);
+       
         $fileId = $FilesObj->id();        
         //Get media id load 
-        $MediaId = \Drupal::database()->query("SELECT  mid.entity_id
-        FROM {media__field_media_image} mid
-        WHERE (mid.field_media_image_target_id = $fileId) ")->fetchfield();
-        // if File Present
-        if (!empty($MediaId)) {
-          return $MediaId; 
-        } 
-        else {
-           // Create media entity with saved file.
-          $MediaImage = Media::create([
-            'bundle' => 'image',
-            'uid' => \Drupal::currentUser()->id(),
-            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-            'field_media_image' => [
-              'target_id' => $fileId,
-              'alt' => t($fileName),
-              'title' => t($fileName),
-            ],
-          ]);
-          $MediaImage->save();
-          return $MediaImage->id();
+        if($extension == "pdf" || $extension == "doc" || $extension == "txt"){
+          $MediaId = \Drupal::database()->query("SELECT  mid.entity_id
+          FROM {media__field_media_document} mid
+          WHERE (mid.field_media_document_target_id = $fileId) ")->fetchfield();
+          // if File Present
+          if (!empty($MediaId)) {
+            return $MediaId; 
+          } 
+          else {
+             // Create media entity with saved file.
+             $MediaImage = Media::create([
+              'bundle' => 'document',
+              'uid' => \Drupal::currentUser()->id(),
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'field_media_document' => [
+                'target_id' => $fileId,
+                'alt' => t($fileName),
+                'title' => t($fileName),
+              ],
+            ]);
+            $MediaImage->save();
+            return $MediaImage->id();
+          }
+
+        }else if($extension == "mp4" || $extension == "mp3" ){
+          $MediaId = \Drupal::database()->query("SELECT  mid.entity_id
+          FROM {media__field_media_video_file} mid
+          WHERE (mid.field_media_video_file_target_id = $fileId) ")->fetchfield();
+          // if File Present
+          if (!empty($MediaId)) {
+            return $MediaId; 
+          } 
+          else {
+             // Create media entity with saved file.
+             $MediaImage = Media::create([
+              'bundle' => 'video',
+              'uid' => \Drupal::currentUser()->id(),
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'field_media_video_file' => [
+                'target_id' => $fileId
+              ],
+            ]);
+            $MediaImage->save();
+            return $MediaImage->id();
+          }
+
+        }else{
+          $MediaId = \Drupal::database()->query("SELECT  mid.entity_id
+          FROM {media__field_media_image} mid
+          WHERE (mid.field_media_image_target_id = $fileId) ")->fetchfield();
+          // if File Present
+          if (!empty($MediaId)) {
+            return $MediaId; 
+          } 
+          else {
+             // Create media entity with saved file.
+            $MediaImage = Media::create([
+              'bundle' => 'image',
+              'uid' => \Drupal::currentUser()->id(),
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'field_media_image' => [
+                'target_id' => $fileId,
+                'alt' => t($fileName),
+                'title' => t($fileName),
+              ],
+            ]);
+            $MediaImage->save();
+            return $MediaImage->id();
+          }
         }
       } 
-      else {     
+      else {    
+        $extension = pathinfo($Uri, PATHINFO_EXTENSION);
         // Create a file entity.
         $file = File::create([
           'uri' => $final_destination,
@@ -281,18 +333,42 @@ class FileToMedia extends FileCopy {
         $file->save();
         
         // Create media entity with saved file.
-        $MediaImage = Media::create([
-          'bundle' => 'image',
-          'uid' => \Drupal::currentUser()->id(),
-          'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-          'field_media_image' => [
-            'target_id' => $file->id(),
-            'alt' => t($file->getFilename()),
-            'title' => t($file->getFilename()),
-          ],
-        ]);
-        $MediaImage->save();
-        return $MediaImage->id();
+         if($extension == "pdf" || $extension == "doc" || $extension == "txt"){
+            $MediaImage = Media::create([
+              'bundle' => 'document',
+              'uid' => \Drupal::currentUser()->id(),
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'field_media_document' => [
+                'target_id' => $file->id()
+              ],
+            ]);
+            $MediaImage->save();
+            return $MediaImage->id();
+         }else if($extension == "mp4" || $extension == "mp3" ){
+            $MediaImage = Media::create([
+              'bundle' => 'video',
+              'uid' => \Drupal::currentUser()->id(),
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'field_media_video_file' => [
+                'target_id' => $file->id()
+              ],
+            ]);
+            $MediaImage->save();
+            return $MediaImage->id();
+         }else{
+          $MediaImage = Media::create([
+            'bundle' => 'image',
+            'uid' => \Drupal::currentUser()->id(),
+            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+            'field_media_image' => [
+              'target_id' => $file->id(),
+              'alt' => t($file->getFilename()),
+              'title' => t($file->getFilename()),
+            ],
+          ]);
+          $MediaImage->save();
+          return $MediaImage->id();
+        }
       }
       //return $id_only ? $MediaImage->id() : ['target_id' => $MediaImage->id()];
     }else{

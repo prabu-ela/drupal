@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: add_premium_content
+label: 'Make Content Premium'
+type: node
+plugin: add_premium_content
+configuration: {  }

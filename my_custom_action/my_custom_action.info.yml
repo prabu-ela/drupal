@@ -1,0 +1,4 @@
+name: My Custom Action
+description: Provide custom actions on Node Update.
+core: 8.x
+type: module

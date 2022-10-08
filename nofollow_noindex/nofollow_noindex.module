@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Contains the noindex_nofollow module.
+ */
+
+/**
+ * Implements hook_page_attachments().
+ */
+function nofollow_noindex_page_attachments(array &$attachments) {
+
+  $no_index = FALSE;
+  $current_path = \Drupal::service('path.current')->getPath();
+  $relative_path = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+  $host = \Drupal::request()->getHost();
+
+  // Get the configurations.
+  $routes_settings = \Drupal::config('nofollow_noindex.routes');
+  $disable_multi_routes = $routes_settings->get();
+  $enable = $routes_settings->get('enable_nofollow', '');
+
+  if ($enable) {
+
+    foreach ($disable_multi_routes as $key => $value) {
+      $current_key = '';
+      $disable_routes = [];
+      if ($key != "enable_nofollow") {
+        $disable_routes = explode("\n", $value);
+        if ($key == 'disable_routes') {
+          $current_key = 'noindex, nofollow';
+        }
+        elseif ($key == 'noindex_disable_routes') {
+          $current_key = 'noindex';
+        }
+        elseif ($key == 'nofollow_disable_routes') {
+          $current_key = 'nofollow';
+        }
+
+        foreach ($disable_routes as $route) {
+
+          $route = trim($route);
+
+          $start = startString($route, '/');
+          $end = endString($route, '*');
+
+          if ($start && $end) {
+            $string = substr_replace($route, "", -1);
+            $no_index = startString($relative_path, $string);
+          }
+          elseif ($start) {
+            $string = substr_replace($route, "", 1);
+            $no_index = startString($relative_path, $route);
+          }
+          elseif ($end) {
+            $string = substr_replace($route, "", -1);
+            $no_index = startString($host, $string);
+          }
+
+          if ($no_index) {
+            if (isset($attachments['#attached']['html_head'])) {
+              foreach ($attachments['#attached']['html_head'] as $key => $val) {
+                foreach ($val as $meta) {
+                  if (isset($meta['#attributes']['name']) && ($meta['#attributes']['name'] == 'robots')) {
+                    $attachments['#attached']['html_head'][$key][0]['#attributes']['content'] = $current_key;
+                  }
+                  else {
+                    $robots = [
+                      '#tag' => 'meta',
+                      '#attributes' => [
+                        'name' => 'robots',
+                        'content' => $current_key,
+                      ],
+                    ];
+                    $attachments['#attached']['html_head'][] = [$robots, 'robots'];
+                  }
+                }
+              }
+            }
+            else {
+              $robots = [
+                '#tag' => 'meta',
+                '#attributes' => [
+                  'name' => 'robots',
+                  'content' => $current_key,
+                ],
+              ];
+              $attachments['#attached']['html_head'][] = [$robots, 'robots'];
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Function to check start string.
+ */
+function startString($string, $startString) {
+  if ($startString) {
+    $len = strlen($startString);
+    return (substr($string, 0, $len) === $startString);
+  }
+  return FALSE;
+}
+
+/**
+ * Function to check end string.
+ */
+function endString($string, $endString) {
+  $len = strlen($endString);
+  if ($len == 0) {
+    return TRUE;
+  }
+  return (substr($string, -$len) === $endString);
+}

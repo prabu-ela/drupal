@@ -1,0 +1,28 @@
+paragraph_migration.paragraph_migration:
+  path: '/paragraph_migration/brouchers'
+  defaults:
+    _form: 'Drupal\paragraph_migration\Form\ParagraphMigrationForm'
+    _title: 'Paragraph Migration Example'
+  requirements:
+    _permission: 'access content'
+paragraph_migration.taxonomy_migration:
+  path: '/paragraph_migration/taxonomy'
+  defaults:
+    _form: 'Drupal\paragraph_migration\Form\TaxonomyMigrationForm'
+    _title: 'Taxonomy Migration Example'
+  requirements:
+    _permission: 'access content'
+paragraph_migration.accordion_migration:
+  path: '/paragraph_migration/accordion'
+  defaults:
+    _form: 'Drupal\paragraph_migration\Form\AccordionMigrationForm'
+    _title: 'Accordion Migration Example'
+  requirements:
+    _permission: 'access content'
+aragraph_migration.productaccordion_migration:
+  path: '/paragraph_migration/productaccordion'
+  defaults:
+    _form: 'Drupal\paragraph_migration\Form\ProductAccordionMigrationForm'
+    _title: 'Accordion Migration Example'
+  requirements:
+    _permission: 'access content'

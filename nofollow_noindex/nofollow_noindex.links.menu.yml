@@ -1,0 +1,6 @@
+nofollow_noindex.routes_config_form:
+  title: 'Nofollow noindex settings'
+  route_name: nofollow_noindex.routes_config_form
+  description: 'Configure Nofollow noindex on the development environment routes.'
+  parent: system.admin_config_search
+  weight: 99

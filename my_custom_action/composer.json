@@ -1,0 +1,17 @@
+{
+  "name": "drupal/my_custom_action",
+  "description": "An advance subscription functionality for Drush 9 commands.",
+  "type": "drupal-module",
+  "autoload": {
+    "psr-4": {
+      "Drupal\\my_custom_action\\": "src/"
+    }
+  },
+  "extra": {
+    "drush": {
+      "services": {
+        "drush.services.yml": "^9"
+      }
+    }
+  }
+}

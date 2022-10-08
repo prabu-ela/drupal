@@ -1,0 +1,5 @@
+services:
+  my_custom_action.commands:
+    class: \Drupal\my_custom_action\Commands\AdvanceSubscriptionDrush
+    tags:
+      - { name: drush.command }

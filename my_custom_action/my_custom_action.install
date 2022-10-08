@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * @file
+ * table to store the recurring order to send mails to the subscriber
+ */
+
+/**
+ * Implments hook_install().
+ */
+function my_custom_action_install() {
+  $database = \Drupal::database();
+  $schema = $database->schema();
+
+  $table_name = 'send_recurring_order_mail_tracking';
+  $table_schema = [
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'size' => 'big',
+        'not null' => TRUE,
+      ],
+      'order_id' => [
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      // 'state' => [
+      //   'type' => 'varchar',
+      //   'length' => 250,
+      // ],
+      'mail_send_status' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'order_id' => ['order_id'],
+      'mail_send_status' => ['mail_send_status'],
+    ],
+  ];
+  if (!\Drupal::database()->schema()->tableExists($table_name)) {
+    $schema->createTable($table_name, $table_schema);
+  }
+}
+
+/**
+ * hook update.
+ */
+function my_custom_action_update_8101() {
+  $database = \Drupal::database();
+  $schema = $database->schema();
+
+  $table_name = 'send_recurring_order_mail_tracking';
+  $table_schema = [
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'size' => 'big',
+        'not null' => TRUE,
+      ],
+      'order_id' => [
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      // 'state' => [
+      //   'type' => 'varchar',
+      //   'length' => 250,
+      // ],
+      'mail_send_status' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'order_id' => ['order_id'],
+      'mail_send_status' => ['mail_send_status'],
+    ],
+  ];
+  if (!\Drupal::database()->schema()->tableExists($table_name)) {
+    \Drupal::database()->schema()->createTable($table_name, $table_schema);
+  }
+}

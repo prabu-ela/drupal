@@ -1,0 +1,5 @@
+name: 'Nofollow Noindex'
+type: module
+description: "Add Nofollow Noindex on Development & QA environments"
+core_version_requirement: ^8 || ^9
+package: custom

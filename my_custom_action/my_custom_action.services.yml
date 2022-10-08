@@ -1,0 +1,11 @@
+services:
+  my_custom_action.pay_bill_cart_event_subscriber:
+    class: \Drupal\my_custom_action\EventSubscriber\CommerceCartRedirectionPayBillSubscriber
+    arguments: ['@request_stack', '@router.route_provider']
+    tags:
+      - { name: event_subscriber }
+  my_custom_action.pay_bill_order_receipt_subscriber:
+    class: Drupal\my_custom_action\EventSubscriber\PayBillOrderReceiptSubscriber
+    arguments: ['@entity_type.manager', '@commerce_order.order_receipt_mail']
+    tags:
+      - { name: 'event_subscriber' }
