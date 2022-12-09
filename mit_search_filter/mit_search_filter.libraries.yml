@@ -1,0 +1,28 @@
+search_filter:
+  version: 1.x
+  css:
+    theme:
+      '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css': {type: external, minified: false}
+  js:
+    '//cdn.jsdelivr.net/momentjs/latest/moment.min.js': {type: external, minified: true}
+    '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js': {type: external, minified: true}
+    js/searchData.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+filter_data:
+  version: X
+  css:
+    theme:
+      '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css': {type: external, minified: false}
+  js:
+    '//cdn.jsdelivr.net/momentjs/latest/moment.min.js': {type: external, minified: true}
+    '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js': {type: external, minified: true}
+    js/dataSearch.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

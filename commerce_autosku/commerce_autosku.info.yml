@@ -1,0 +1,8 @@
+name: Commerce Automatic Product Variation SKU
+description: Automatically Creates the SKU of a product using tokens.
+package: Commerce (contrib)
+type: module
+core_version_requirement: ^8 || ^9
+dependencies:
+  - commerce:commerce_product
+  - token:token

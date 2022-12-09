@@ -1,0 +1,9 @@
+cartvalidation:
+  version: X
+  js:
+    js/cartValidation.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

@@ -1,0 +1,9 @@
+timer:
+  version: 1.0
+  js:
+    js/carttimer.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

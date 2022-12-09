@@ -1,0 +1,3 @@
+services:
+  mit_inventory_management.inventory_validation:
+    class: Drupal\mit_inventory_management\Service\InventoryValidateService

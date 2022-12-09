@@ -1,0 +1,14 @@
+home_page_timer.timer:
+  path: '/addtocart/timer'
+  defaults:
+    _controller: '\Drupal\home_page_timer\Controller\HomePageTimerController::getTimer'
+    _title: 'Timer'
+  requirements:
+    _permission: 'access content'
+home_page_timer.set_timer:
+  path: '/addtocart/settimer'
+  defaults:
+    _controller: '\Drupal\home_page_timer\Controller\HomePageTimerController::setTimer'
+    _title: 'Timer'
+  requirements:
+    _permission: 'access content'

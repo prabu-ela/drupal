@@ -1,0 +1,8 @@
+mit_custom_addtocart.list:
+ path: '/add/product/{productId}'
+ defaults:
+   _controller: '\Drupal\mit_custom_addtocart\Controller\CartsController::addToCart'
+   _title: ''
+ requirements:
+   _permission: 'access content'
+   productId: \d+

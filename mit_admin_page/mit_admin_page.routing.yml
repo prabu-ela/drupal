@@ -1,0 +1,18 @@
+mit_admin_page.publish:
+  path: '/node/publish/{nid}'
+  defaults:
+    _controller: '\Drupal\mit_admin_page\Controller\OperationLinkController::publishNode'
+  requirements:
+    _permission: 'access content'
+mit_admin_page.unpublish:
+  path: '/node/unpublish/{nid}'
+  defaults:
+    _controller: '\Drupal\mit_admin_page\Controller\OperationLinkController::unPublishNode'
+  requirements:
+    _permission: 'access content'
+mit_admin_page.feature:
+  path: '/node/feature/{nid}/{term}'
+  defaults:
+    _controller: '\Drupal\mit_admin_page\Controller\OperationLinkController::feature'
+  requirements:
+    _permission: 'access content'

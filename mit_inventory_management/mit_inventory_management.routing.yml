@@ -1,0 +1,7 @@
+mit_inventory_management.inventory_management_form:
+  path: '/admin/manage/inventory'
+  defaults:
+    _form: '\Drupal\mit_inventory_management\Form\InventoryManagementForm'
+    _title: 'Inventory'
+  requirements:
+    _permission: 'access content'

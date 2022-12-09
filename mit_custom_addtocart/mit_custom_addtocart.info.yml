@@ -1,0 +1,5 @@
+name: MITAC Custom Add To Cart
+type: module
+package: Custom
+description: Adding Product To Cart Programmatically.
+core_version_requirement: ^8 || ^9

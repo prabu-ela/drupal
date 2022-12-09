@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Contains Custamization of add to cart.
+ */
+
+use Drupal\views\Views;
+use Drupal\node\NodeInterface;
+use Drupal\commerce_product\Entity\ProductAttributeValue;
+
+/**
+ * Implements hook_theme().
+ */
+function mit_custom_addtocart_theme($existing, $type, $theme, $path) {
+  return [
+    'mitac_addtocart' => [
+      'variables' =>
+     [
+       'data' => NULL,
+     ],
+    ],
+  ];
+}

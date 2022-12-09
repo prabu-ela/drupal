@@ -1,0 +1,27 @@
+inventory_management:
+  version: 1.0
+  js:
+    js/inventory.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+inventory_validation:
+  version: X
+  js:
+    js/inventoryValidate.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+multi_select:
+  version: X
+  js:
+    js/selectAll.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

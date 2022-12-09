@@ -1,0 +1,440 @@
+<?php
+
+/**
+ * @file
+ * Contains inventory details.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\commerce_product\Entity\Product;
+use Drupal\commerce_product\Entity\ProductVariation;
+
+/**
+ * Implements hook_form_alter().
+ */
+function mit_inventory_management_form_alter(&$form, $form_state, $form_id) {
+
+  // Showing Inventory level for the Variation.
+  if ($form_id == 'commerce_product_variation_ticket_edit_form' || $form_id == 'commerce_product_variation_ticket_add_form') {
+    $form['field_inventory_level']['widget'][0]['stock_transaction_note']['#access'] = FALSE;
+    $form['field_inventory_level']['widget'][0]['adjustment']['#access'] = FALSE;
+  }
+
+  // Arranging form element.
+  $form['target']['#weight'] = 1;
+  $form['source']['#weight'] = 0;
+  $form['transaction_qty']['#weight'] = 2;
+  $form['submit']['#weight'] = 10;
+  $form['transaction_note']['#weight'] = 8;
+
+  // Changing for title.
+  if ($form_id == 'commerce_stock_transactions1') {
+    $form['#title'] = t('Create Inventory Transaction');
+  }
+
+  // Inventory Transaction Form Modification.
+  if ($form_id == 'commerce_stock_transactions2') {
+
+    $form['#attached']['library'][] = 'mit_inventory_management/inventory_management';
+
+    // Hiding return and sell stock.
+    unset($form['transaction_type']['#options']['sellStock']);
+    unset($form['transaction_type']['#options']['returnStock']);
+
+    $form['unit_price'] = [
+      '#type' => 'number',
+      '#title' => t('Unit Price'),
+      '#step' => '.01',
+      '#size' => 40,
+      '#step' => '.01',
+      '#weight' => 3,
+    ];
+    $form['additional_fee'] = [
+      '#type' => 'number',
+      '#title' => t('Service charges'),
+      '#size' => 40,
+      '#step' => '.01',
+      '#weight' => 4,
+    ];
+    $form['purchased_date'] = [
+      '#type' => 'date',
+      '#title' => t('Purchased Date'),
+      '#weight' => 5,
+      '#attributes' => [
+        'max' => \Drupal::service('date.formatter')->format(REQUEST_TIME, 'custom', 'Y-m-d'),
+      ],
+    ];
+    $form['expiry_date'] = [
+      '#type' => 'date',
+      '#title' => t('Experition Date'),
+      '#weight' => 6,
+      '#attributes' => [
+        'min' => \Drupal::service('date.formatter')->format(REQUEST_TIME, 'custom', 'Y-m-d'),
+      ],
+    ];
+    $form['payment_type'] = [
+      '#type' => 'radios',
+      '#title' => t('Payment Method'),
+      '#weight' => 7,
+      '#options' => [
+        'not_paid' => t('Not Paid'),
+        'fully_paid' => t('Fully Paid'),
+        'partial_paid' => t('Partial Paid'),
+      ],
+    ];
+
+    // Submit Handler for the transaction insert.
+    $form['#submit'][1] = 'transaction_insert';
+
+    // Checking Qty for the variation.
+    if (!empty($form['product_variation_id']['#value'])) {
+      // Calling service to get the available qty.
+      $service = \Drupal::service("mit_inventory_management.inventory_validation")->validateInventory($form['product_variation_id']['#value']);
+
+      // Attaching JS for validating the qty.
+      $form['#attached']['library'][] = 'mit_inventory_management/inventory_validation';
+      $form['#attached']['drupalSettings']['mit_inventory_management']['data'] = $service;
+    }
+
+  }
+}
+
+/**
+ * Custom inventory tranaction type insert.
+ */
+function transaction_insert($form, $form_state) {
+
+  // Getting Base URL.
+  global $base_url;
+
+  // $redirect = new
+  // RedirectResponse($base_url . '/admin/inventory-transaction-type');
+  $values = $form_state->getValues();
+
+  // Getting Current user.
+  $values['current_user'] = \Drupal::currentUser()->id();
+
+  // Loading variation details.
+  $variation = ProductVariation::load($values['product_variation_id']);
+
+  // Fetching Product details.
+  $product = Product::load((int) $variation->product_id->target_id);
+
+  // Fetching node id mapped with the product.
+  $node_id = $product->field_ticket->target_id;
+
+  $node = Node::load($node_id);
+  if ($node instanceof NodeInterface) {
+    $values['vendor_id'] = $node->field_event_vendor->target_id;
+  }
+
+  $values['node_id'] = $node_id;
+  $values['product_id'] = $product->product_id->value;
+
+  // Receive Transaction Type.
+  if ($values['transaction_type'] == 'receiveStock') {
+    try {
+      $values['unit_price'] = !empty($values['unit_price']) ? $values['unit_price'] : NULL;
+      $values['expiry_date'] = !empty($values['expiry_date']) ? $values['expiry_date'] : NULL;
+      $values['purchased_date'] = !empty($values['purchased_date']) ? $values['purchased_date'] : NULL;
+      $values['additional_fee'] = !empty($values['additional_fee']) ? $values['additional_fee'] : NULL;
+
+      $query = \Drupal::database()->insert('inventory_transaction_type');
+      $query->fields([
+        'location',
+        'transaction_type',
+        'vid',
+        'event_id',
+        'ticket_id',
+        'vendor_id',
+        'quantity',
+        'unit_price',
+        'ticket_expiry_date',
+        'purchase_date',
+        'addtional_fee',
+        'notes',
+        'payment_flag',
+        'user_id',
+      ]);
+      $query->values([
+        $values['source_location'],
+        $values['transaction_type'],
+        $values['product_variation_id'],
+        $values['node_id'],
+        $values['product_id'],
+        $values['vendor_id'],
+        $values['transaction_qty'],
+        $values['unit_price'],
+        $values['expiry_date'],
+        $values['purchased_date'],
+        $values['additional_fee'],
+        $values['transaction_note'],
+        $values['payment_type'],
+        $values['current_user'],
+      ]);
+      $query->execute();
+      // $redirect->send();
+    }
+    catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+
+  // Move Transation Type.
+  if ($values['transaction_type'] == 'moveStock') {
+
+    // Checking not to move in the same location.
+    if ($values['source_location'] != $values['target_location']) {
+      try {
+
+        // Removing stock from the source location.
+        $query = \Drupal::database()->insert('inventory_transaction_type');
+        $query->fields([
+          'location',
+          'transaction_type',
+          'target_location',
+          'vid',
+          'event_id',
+          'ticket_id',
+          'vendor_id',
+          'quantity',
+          'notes',
+          'user_id',
+        ]);
+        $query->values([
+          $values['source_location'],
+          'moveStock',
+          $values['target_location'],
+          $values['product_variation_id'],
+          $values['node_id'],
+          $values['product_id'],
+          $values['vendor_id'],
+          '-' . $values['transaction_qty'],
+          $values['transaction_note'],
+          $values['current_user'],
+        ]);
+        $query->execute();
+      }
+      catch (\Throwable $th) {
+        throw $th;
+      }
+
+      // Receiving stock to the target location.
+      try {
+        $query = \Drupal::database()->insert('inventory_transaction_type');
+        $query->fields([
+          'location',
+          'transaction_type',
+          'target_location',
+          'vid',
+          'event_id',
+          'ticket_id',
+          'vendor_id',
+          'quantity',
+          'notes',
+          'user_id',
+        ]);
+        $query->values([
+          $values['target_location'],
+          'receiveStock',
+          NULL,
+          $values['product_variation_id'],
+          $values['node_id'],
+          $values['product_id'],
+          $values['vendor_id'],
+          $values['transaction_qty'],
+          $values['transaction_note'],
+          $values['current_user'],
+        ]);
+        $query->execute();
+        \Drupal::messenger()->addMessage('Inventory Moved Successfully', 'status');
+        // $redirect->send();
+      }
+      catch (\Throwable $th) {
+        throw $th;
+      }
+    }
+    else {
+      \Drupal::messenger()->addMessage('You can not move to the same location.', 'error');
+    }
+  }
+
+  // Sell Inventory.
+  if ($values['transaction_type'] == 'sellStock') {
+    try {
+      $values['unit_price'] = !empty($values['unit_price']) ? $values['unit_price'] : NULL;
+
+      $query = \Drupal::database()->insert('inventory_transaction_type');
+      $query->fields([
+        'location',
+        'transaction_type',
+        'vid',
+        'event_id',
+        'ticket_id',
+        'vendor_id',
+        'quantity',
+        'notes',
+        'user_id',
+      ]);
+      $query->values([
+        $values['source_location'],
+        $values['transaction_type'],
+        $values['product_variation_id'],
+        $values['node_id'],
+        $values['product_id'],
+        $values['vendor_id'],
+        '-' . $values['transaction_qty'],
+        $values['transaction_note'],
+        $values['current_user'],
+      ]);
+      $query->execute();
+      \Drupal::messenger()->addMessage('Inventory Sold Successfully', 'status');
+      // $redirect->send();
+    }
+    catch (\Throwable $th) {
+      \Drupal::messenger()->addMessage('Unexperted Error Occurs.', 'error');
+      throw $th;
+    }
+  }
+
+  // Return Stock.
+  if ($values['transaction_type'] == 'returnStock') {
+    try {
+      $values['unit_price'] = !empty($values['unit_price']) ? $values['unit_price'] : NULL;
+      $query = \Drupal::database()->insert('inventory_transaction_type');
+      $query->fields([
+        'location',
+        'transaction_type',
+        'vid',
+        'event_id',
+        'ticket_id',
+        'vendor_id',
+        'quantity',
+        'notes',
+        'user_id',
+        'return_user',
+        'order_id',
+      ]);
+      $query->values([
+        $values['source_location'],
+        $values['transaction_type'],
+        $values['product_variation_id'],
+        $values['node_id'],
+        $values['product_id'],
+        $values['vendor_id'],
+        $values['transaction_qty'],
+        $values['transaction_note'],
+        $values['current_user'],
+        $values['return_user'],
+        $values['order'],
+      ]);
+      $query->execute();
+      \Drupal::messenger()->addMessage('Inventory Return is Successfully', 'status');
+      // $redirect->send();
+    }
+    catch (\Throwable $th) {
+      \Drupal::messenger()->addMessage('Unexperted Error Occurs.', 'error');
+      throw $th;
+    }
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function mit_inventory_management_entity_insert(EntityInterface $entity) {
+
+  // Adding box office automatically when term added.
+  if ($entity->getEntityTypeId() == 'taxonomy_term' && $entity->vid->target_id == 'box_office') {
+    try {
+      $connection = \Drupal::service('database');
+
+      $result1 = $connection->insert('commerce_stock_location')->fields([
+        'type' => 'default',
+        'uuid' => $entity->uuid->value,
+        'langcode' => 'en',
+      ])
+        ->execute();
+
+      $result2 = $connection->insert('commerce_stock_location_field_data')->fields([
+        'location_id' => $result1,
+        'type' => 'default',
+        'langcode' => 'en',
+        'uid' => \Drupal::currentUser()->id(),
+        'name' => $entity->name->value,
+        'status' => 1,
+        'default_langcode' => 1,
+      ])
+        ->execute();
+
+      $result3 = $connection->insert('commerce_stock_location__96efce0cf5')->fields([
+        'bundle' => 'default',
+        'deleted' => 0,
+        'revision_id' => $result1,
+        'entity_id' => $result1,
+        'langcode' => 'en',
+        'delta' => 0,
+        'field_box_office_location_target_id' => $entity->id(),
+      ])
+        ->execute();
+    }
+    catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function mit_inventory_management_entity_delete(EntityInterface $entity) {
+
+  // Deleting box office automatically when term added.
+  if ($entity->getEntityTypeId() == 'taxonomy_term' && $entity->vid->target_id == 'box_office') {
+    try {
+      $connection = \Drupal::service('database');
+
+      $query = \Drupal::database()->select('commerce_stock_location__96efce0cf5', 't');
+      $query->fields('t', ['entity_id']);
+      $query->condition('field_box_office_location_target_id', $entity->id());
+      $query->distinct();
+      $result = $query->execute()->fetchAll();
+
+      // Feting deleting location id.
+      $deleting_location = $result[0]->entity_id;
+
+      $result1 = $connection->delete('commerce_stock_location')
+        ->condition('location_id', $deleting_location)
+        ->execute();
+
+      $result2 = $connection->delete('commerce_stock_location_field_data')
+        ->condition('location_id', $deleting_location)
+        ->execute();
+
+      $result3 = $connection->delete('commerce_stock_location__96efce0cf5')
+        ->condition('entity_id', $deleting_location)
+        ->execute();
+
+    }
+    catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mit_inventory_management_theme() {
+  return [
+    'inventory_management_block' => [
+      'variables' => [
+        'content' => [],
+      ],
+    ],
+  ];
+}

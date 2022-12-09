@@ -1,0 +1,89 @@
+
+<div class="customize-columns">
+  <a href="#" id="customize-columns-link">Customize Columns</a>
+    <label for="mitac-price">
+      <input type="checkbox" id="mitac-price" />
+      MITAC price
+    </label>
+    <label for="retail-price">
+      <input type="checkbox" id="retail-price" />
+      Retail price
+    </label>
+    <label for="mit-price">
+      <input type="checkbox" id="mit-price" />
+      MIT price
+    </label>
+    <label for="purchase-date">
+      <input type="checkbox" id="purchase-date" />
+      Purchase date
+    </label>
+    <label for="last-transaction-date-time">
+      <input type="checkbox" id="last-transaction-date-time" />
+      Last transaction date/time
+    </label>
+    <label for="last-transaction-type">
+      <input type="checkbox" id="last-transaction-type" />
+      Last transaction type
+    </label>
+    <label for="ticket-expiration-date">
+      <input type="checkbox" id="ticket-expiration-date" />
+      Ticket expiration date
+    </label>
+  </div>
+</div>
+<table class="views-table views-view-table">
+  <thead>
+    <tr>
+      <th scope="col">Event</th>
+      <th scope="col">Event date/time</th>
+      <th scope="col">Box office</th>
+      <th scope="col">Qty</th>
+      <th scope="col">MITAC price</th>
+      <th scope="col">Retail price</th>
+      <th scope="col">MIT price</th>
+      <th scope="col">Purchase date</th>
+      <th scope="col">Last transaction date/time</th>
+      <th scope="col">Last transaction type</th>
+      <th scope="col">Ticket expiration date</th>
+      <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% if content.events %}
+    {% for key,event in content.events %}
+      <tr id={{ "parent-row-" ~ key }}>
+        <td>{{ event.title }}</td>
+        <td>{{ event.created }}</td>
+        <td></td>
+        <td>{{ event.quantity }}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      {% if event.options %}
+        {% for optionKey,option in event.options %}
+          <tr id={{ "child-row-" ~ key }} class={{ "parent-row-" ~ key }}>
+            <td>{{ option.title }}</td>
+            <td></td>
+            <td>{{ option.location }}</td>
+            <td>{{ option.quantity }}</td>
+            <td>{{ option.mitac_price }}</td>
+            <td>{{ option.retail_price }}</td>
+            <td>{{ option.mit_price }}</td>
+            <td>{{ option.purchase_date }}</td>
+            <td>{{ option.transaction_time }}</td>
+            <td>{{ option.transaction_type }}</td>
+            <td>{{ option.ticket_expiration_date }}</td>
+            <td><a href="#">{{ "Manage inventory" }}</a></td>
+          </tr>
+        {% endfor%}
+      {% endif %}
+    {% endfor%}
+  {% endif %}
+  </tbody>
+</table>

@@ -1,0 +1,5 @@
+name: Admin changes
+type: module
+description: 'A custom module for admin UI'
+package: custom
+core_version_requirement: ^8 || ^9

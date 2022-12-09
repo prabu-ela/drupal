@@ -1,0 +1,7 @@
+name: MITAC Inventory Management
+type: module
+description: 'Custom Inventory Management module'
+package: custom
+core_version_requirement: ^9 || ^10
+dependencies:
+  - commerce_stock:commerce_stock

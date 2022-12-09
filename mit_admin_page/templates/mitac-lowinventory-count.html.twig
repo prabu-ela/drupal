@@ -1,0 +1,27 @@
+<div id="section">
+  <div class="article">
+		{% if default_show %}
+			<p>
+				<strong>Low Inventory</strong>
+				
+				{% for key, value in default_show %}
+					{% for i, val in value %}
+						<a class="toggle" href="/product/{{ i }}/edit">{{ val }}</a>
+					{% endfor %}
+				{% endfor %}
+			</p>
+		{% endif %}
+		{% if readmore_show %}
+    <p class="moretext">
+			{% for key, value in readmore_show %}
+				{% for i, val in value %}
+					<a class="toggle" href="/product/{{ i }}/edit">{{ val }}</a>
+				{% endfor %}
+			{% endfor %}
+    </p>
+		{% endif %}
+  </div>
+	{% if readmore_show %}
+  	<a class="moreless-button" href="#">Read more</a>
+	{% endif %}
+</div>

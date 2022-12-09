@@ -1,0 +1,5 @@
+name: MITAC Search Filter
+type: module
+description: 'Custom Inventory Management module for search customization'
+package: custom
+core_version_requirement: ^9 || ^10

@@ -1,0 +1,53 @@
+multi_select:
+  version: X
+  css:
+    theme:
+      '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css': {type: external, minified: true}
+  js:
+    '//cdn.jsdelivr.net/momentjs/latest/moment.min.js': {type: external, minified: true}
+    '//cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js': {type: external, minified: true}
+    js/selectAll.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+
+inputmask_lib:
+  js:
+    '//cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js': {type: external, minified: true}
+    js/phoneValidation.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+
+event_create:
+  js:
+    js/eventAdd.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+    - core/drupal.dialog
+    - core/drupal.dialog.ajax
+
+ticket_create:
+  js:
+    js/ticketAdd.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings
+
+ticket_edit:
+  js:
+    js/ticketEdit.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
+    - core/drupalSettings

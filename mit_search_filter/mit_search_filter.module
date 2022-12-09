@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file
+ * Contains customization for homepage search.
+ */
+
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+
+/**
+ * Implements hook_form_alter().
+ */
+function mit_search_filter_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  global $base_url;
+  // Cheking for id for exposed filter.
+  if ($form_id == 'views_exposed_form') {
+
+    // Getting current path of the page.
+    $current_path = \Drupal::service('path.current')->getPath();
+    $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+    // Attaching js for date picker.
+    if ($result == '/home-page') {
+
+      $form['date']['#prefix'] = '<div class="custom-filter">';
+      $form['filter'] = [
+        '#type' => 'select',
+        '#options' => ['all' => 'All dates', 'range' => 'Date Range'],
+        '#prefix' => '<div class="filter-form">',
+      ];
+      $form['hide_value'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class=hide_show>X</div>',
+        '#suffix' => '</div></div>',
+      ];
+
+      $form['#attached']['library'][] = 'mit_search_filter/search_filter';
+      $form['#attached']['drupalSettings']['mit_search_filter']['path'] = $base_url;
+    }
+
+    // All other Event pages.
+    if (strpos($result, '/event') !== FALSE) {
+
+      if ($result != "/admin/manage/event") {
+
+        // Getting params.
+        $param = \Drupal::request()->query->all();
+
+        // Setting default valur for filter param.
+        if (isset($param['filter'])) {
+          if ($param['filter'] == 'range') {
+            $selected_value = '';
+            $selected_value = $param['data-rang-filter']['min'] . ' - ' . $param['data-rang-filter']['max'];
+          }
+        }
+
+        $form['date']['#prefix'] = '<div class="custom-filter">';
+        $form['filter'] = [
+          '#type' => 'select',
+          '#options' => ['all' => 'All dates', 'range' => 'Date range'],
+          '#prefix' => '<div class="filter-form">',
+          // '#default_value' => !empty($param['filter']) ? $param['filter'] : "all",
+        ];
+        $form['date_text'] = [
+          '#type' => 'textfield',
+          '#attributes' => [
+            'class' => ['date-min-max'],
+          ],
+          '#default_value' => !empty($selected_value) ? $selected_value : "",
+        ];
+        $form['hide_value'] = [
+          '#type' => 'markup',
+          '#markup' => '<div class=hide_show>X</div>',
+          '#suffix' => '</div></div>',
+        ];
+
+        // Attaching JS for filter options.
+        $form['#attached']['library'][] = 'mit_search_filter/filter_data';
+        $form['#attached']['drupalSettings']['mit_search_filter']['url'] = $base_url;
+      }
+    }
+
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function mit_search_filter_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  if ($view->id() == 'event_listing') {
+    $param = \Drupal::request()->query->all();
+
+    if (isset($param['sort_title'])) {
+      $view->query->orderby[0]['direction'] = $param['sort_title'];
+    }
+    $view->query->distinct = TRUE;
+
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as $key => &$condition) {
+        if (isset($param['date_less'])) {
+          // If ($param['date_less'] == "no") {
+          //   if ($condition['field'] == 'node__field_dateless_event.field_dateless_event_value') {
+          //     $condition = [
+          //       'field' => 'node__field_dateless_event.field_dateless_event_value',
+          //       'value' => 0,
+          //       'operator' => '=',
+          //     ];
+          //   }
+          // }.
+        }
+        else {
+          if ($condition['field'] == 'node__field_dateless_event.field_dateless_event_value') {
+            unset($condition_group['conditions'][$key]);
+          }
+          if ($condition['field'] == 'node__field_discount_category_tags2.field_discount_category_tags_target_id IN(:node__field_discount_category_tags_field_discount_category_tags_target_id1[])') {
+            unset($condition_group['conditions'][$key]);
+          }
+        }
+      }
+    }
+
+  }
+}
+
+/**
+ * Implements hook_link_alter().
+ */
+function mit_search_filter_link_alter(&$variables) {
+
+  // Check logged in user.
+  if (\Drupal::currentUser()->isAuthenticated()) {
+    \Drupal::service('cache.menu')->invalidateAll();
+    // This user is logged in.
+    $current_user = \Drupal::currentUser();
+
+    // It returns user display name.
+    $user_display_name = $current_user->getDisplayName();
+
+    // Chaging user login to user display name.
+    if ($variables['text'] == 'User Name') {
+      $variables['text'] = t($user_display_name);
+    }
+
+    // Chaging user my account to profile.
+    if ($variables['text'] == 'My account') {
+      $variables['text'] = t('Your profile');
+    }
+  }
+}

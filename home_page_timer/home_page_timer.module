@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Contains home page timer.
+ */
+
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function home_page_timer_preprocess_page(&$variables) {
+
+  // Getting curent user.
+  $current_user = \Drupal::currentUser();
+
+  if ($current_user->isAuthenticated()) {
+    $variables['#attached']['library'][] = 'home_page_timer/timer';
+
+    // Check cart is empty.
+    $cart_empty = check_cart_empty();
+    if ($cart_empty == 0) {
+      $variables['#attached']['drupalSettings']['data'] = "00:00";
+    }
+    else {
+      $uid = $current_user->id();
+      $account = User::load($uid);
+      if (!$account->get('field_cart_timer')->isEmpty()) {
+        $user_date = $account->get('field_cart_timer')->value;
+        $current_time = date("d-m-Y h:i:s");
+        $from_time = strtotime($user_date);
+        $to_time = strtotime($current_time);
+        $diff_minutes = $to_time - $from_time;
+        $mins = 1200 - $diff_minutes;
+
+        if ($diff_minutes <= 1200 && $diff_minutes >= 0) {
+          $variables['#attached']['drupalSettings']['data'] = gmdate("i:s", $mins);
+        }
+        else {
+          $variables['#attached']['drupalSettings']['data'] = "00:00";
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Check cart Empty.
+ */
+function check_cart_empty() {
+  /** @var CurrentStoreInterface $cs */
+  $cs = \Drupal::service('commerce_store.current_store');
+  /** @var CartProviderInterface $cpi */
+  $cpi = \Drupal::service('commerce_cart.cart_provider');
+  $cart = $cpi->getCart('default', $cs->getStore());
+  $nbItemsInCart = $cart ? count($cart->getItems()) : 0;
+  return $nbItemsInCart;
+}

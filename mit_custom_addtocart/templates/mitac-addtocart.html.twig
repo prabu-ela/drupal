@@ -1,0 +1,41 @@
+{% set i = 0 %}
+{% set tot_price = 0 %}
+{% set total = 0 %}
+<form method="post" action="/add/product/{{ data.product }}" accept-charset="UTF-8" class="custom-add-to-cart-form" id="commerce-variation-add-to-cart-form-{{ data.product }}">
+  {% for key,value in data %}
+    {% for ind, val in value %}
+    <div class="pricelist">
+      <div class="labeltitle">{{ ind }} (${{ val.price|number_format(2) }})</div>
+      <div class="quantity">
+      {% if val.stock != 0 %}
+        {% if val.available == "Not Available" %}
+          <p class="not-available" style="color:red;margin: 0;">Not Available</p>
+        {% else %}
+          <button class="qty-btn-minus btn-light" type="button"><i class="fa fa-minus"></i></button>
+          <input data-drupal-selector="edit-quantity-{{ i }}-value" title ="Please enter maximum {{ val.stock }} quantity." type="number" id="edit-quantity-{{ i }}-value" name="data[{{ val.varition }}]quantity[{{ i }}][value]" value="0" step="1" min="0" max="{{ val.stock }}" placeholder="" class="form-number form-control" oninput="this.value = Math.abs(this.value)" data-price="{{ val.price }}" data-limit="{{ val.limit }}">
+          <button class="qty-btn-plus btn-light" type="button"><i class="fa fa-plus"></i></button>
+        {% endif %}
+      {% else %}
+        <p class="outofstock" style="color:red";>Sold out</p>
+      {% endif %}
+      </div> 
+    </div>  
+      {% set tot_price = val.price|number_format(2) %}
+      {% set total = total + tot_price %}
+      {% set i = i+1 %}
+    {% endfor %}
+  {% endfor %}
+  <div class="tolltxt"><p>Total</p></div>
+  <div class="tol">$00.00</div>
+  {% if logged_in %}
+    <div class="addtocartbtn">
+      <input type="button" value="{% trans %}Add to cart{% endtrans %}" class="button button--primary form-submit" />
+    </div>
+    <p class="refund">Tickets are non-refundable</p>
+    {% else %}
+    <div class="addtocartbtn">
+      <a href="/user/login" class="login-link">{{ 'Log in to purchase'|t }}</a>
+    </div>
+  {% endif %}
+  <input type="hidden" name="product_id" value="{{ data.product }}" />
+</form>

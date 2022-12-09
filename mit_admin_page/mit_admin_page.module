@@ -1,0 +1,339 @@
+<?php
+
+/**
+ * @file
+ * Contains mit_custom.module.
+ */
+
+use Drupal\core\Url;
+use Drupal\node\Entity\Node;
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+
+/**
+ * Implements hook_entity_operation_alter().
+ */
+function mit_admin_page_entity_operation_alter(array &$operations, EntityInterface $entity) {
+
+  if ($entity->bundle() == 'event') {
+    // Add custom operation.
+    $nid = $entity->nid->value;
+    $product = Url::fromUri('internal:/product/add/ticket?nid=' . $nid);
+
+    $operations['feature'] = [
+      'title' => t('FEATURE'),
+      'weight' => 10,
+      'url' => Url::fromRoute('mit_admin_page.feature', ['nid' => $nid, 'term' => 'Feature']),
+    ];
+    $operations['almost_gone'] = [
+      'title' => t('Almost gone'),
+      'weight' => 11,
+      'url' => Url::fromRoute('mit_admin_page.feature', ['nid' => $nid, 'term' => 'Almost gone']),
+    ];
+    $operations['limited_tickets'] = [
+      'title' => t('Limited tickets'),
+      'weight' => 12,
+      'url' => Url::fromRoute('mit_admin_page.feature', ['nid' => $nid, 'term' => 'Limited tickets']),
+    ];
+    $operations['staff_pick'] = [
+      'title' => t('Staff pick'),
+      'weight' => 13,
+      'url' => Url::fromRoute('mit_admin_page.feature', ['nid' => $nid, 'term' => 'Staff pick']),
+    ];
+    $operations['add_ticket'] = [
+      'title' => t('Add ticket'),
+      'weight' => 14,
+      'url' => $product,
+    ];
+
+    // Checking node is published or not.
+    if ($entity->status->value != 1) {
+      $operations['publish'] = [
+        'title' => t('Publish'),
+        'weight' => 16,
+        'url' => Url::fromRoute('mit_admin_page.publish', ['nid' => $nid]),
+      ];
+    }
+    else {
+      $operations['unpublish'] = [
+        'title' => t('Unpublish'),
+        'weight' => 16,
+        'url' => Url::fromRoute('mit_admin_page.unpublish', ['nid' => $nid]),
+      ];
+    }
+    $operations['clone'] = [
+      'title' => t('Duplicate'),
+      'weight' => 15,
+      'url' => Url::fromUri('internal:/entity_clone/node/' . $nid),
+    ];
+
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function mit_admin_page_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Changing form.
+  if ($form_id == "views_exposed_form") {
+
+    $view = $form_state->getStorage('view');
+
+    if ($view['view']->id() == 'mitac_manage_content' && $view['view']->current_display == 'page_1') {
+
+      // Adding prefix and suffix.
+      $form['field_dateless_event_value']['#prefix'] = '<div class=dateless-event>';
+      $form['views_fields_on_off_form']['#suffix'] = '</div>';
+
+      // Getting all event content type.
+      $nids = Drupal::entityQuery('node')->condition('type', 'event')->execute();
+      $nodes = Node::loadMultiple($nids);
+
+      foreach ($nodes as $key => $value) {
+        $data[''] = 'All events';
+        $data[$key] = $value->getTitle();
+      }
+
+      $form['title'] = [
+        '#type' => 'select',
+        '#title' => t('Event'),
+        '#options' => $data,
+        '#weight' => -1,
+      ];
+
+      array_unshift($form['#submit'], '_fix_max_date_submit_function');
+    }
+
+    // Making select2 option as multi select.
+    $form['#attached']['library'][] = 'mit_admin_page/multi_select';
+    $params = Drupal::request()->get('created');
+    if (!empty($params)) {
+      $date_array = explode(' - ', $params['min']);
+      $form['#attached']['drupalSettings']['date_array'] = $date_array;
+    }
+  }
+
+  // Change none to required field.
+  if ($form_id == 'node_event_form') {
+    $form['#attached']['library'][] = 'mit_admin_page/event_create';
+
+    $form['field_search_and_reporting_tags']['widget']['#options']['_none'] = t('Select reporting label');
+    $form['field_categories']['widget']['#options']['_none'] = t('Select primary category');
+
+    // Adding vendor pop in the event page.
+    $form['vendor_link'] = [
+      '#type' => 'link',
+      '#title' => t('Add vendor'),
+      '#weight' => 1 ,
+      '#url' => Url::fromRoute('node.add', ['node_type' => 'vendor']),
+      '#attributes' => [
+        'class' => ['use-ajax', 'js-append-vendor'],
+        'data-dialog-type' => 'modal',
+        'data-dialog-options' => Json::encode([
+          'width' => 700,
+        ]),
+      ],
+    ];
+  }
+
+  // Adding vendor pop in event edit page.
+  if ($form_id == "node_event_edit_form") {
+    $form['vendor_link'] = [
+      '#type' => 'link',
+      '#title' => t('Add vendor'),
+      '#weight' => 1 ,
+      '#url' => Url::fromRoute('node.add', ['node_type' => 'vendor']),
+      '#attributes' => [
+        'class' => ['use-ajax', 'js-append-vendor'],
+        'data-dialog-type' => 'modal',
+        'data-dialog-options' => Json::encode([
+          'width' => 700,
+        ]),
+      ],
+    ];
+  }
+
+  // Auto populating event in the product page.
+  if ($form_id == 'commerce_product_ticket_add_form') {
+    $param = \Drupal::request()->query->get('nid');
+    if (!empty($param)) {
+      $form['field_ticket']['widget']['#default_value'] = [$param];
+      $form['field_ticket']['widget']['#disabled'] = TRUE;
+
+      // Getting all event content type.
+      $nids = Drupal::entityQuery('node')->condition('type', 'event')->execute();
+      $nodes = Node::load($param);
+
+      // Setting the Title of the page.
+      $form['title']['widget'][0]['value']['#default_value'] = $nodes->title->value . ' - ' . date('M d Y');
+      $form['title']['widget']['#disabled'] = TRUE;
+    }
+    else {
+      $date = date('M d Y');
+      $form['#attached']['library'][] = 'mit_admin_page/ticket_create';
+      $form['#attached']['drupalSettings']['currDate'] = $date;
+    }
+  }
+
+  // Edit ticket alteration.
+  if ($form_id == 'commerce_product_ticket_edit_form') {
+    $form['#attached']['library'][] = 'mit_admin_page/ticket_edit';
+    $form['variations']['widget']['entities']['#table_fields']['status']['label'] = t('Published');
+  }
+
+  // Create user page remove unwanted box office.
+  if ($form_id == 'user_register_form' || $form_id == 'user_form') {
+
+    $form['account']['mail']['#title'] = t('Primary email address');
+    $form['actions']['submit']['#value'] = t('Save');
+
+    // Customising the address fileds.
+    $form['field_address']['widget'][0]['address']['#after_build'][] = 'mit_admin_page_customize_address';
+
+    $form['field_mit_user_type']['widget']['#options']['_none'] = 'Select user type';
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info_alter().
+ */
+function mit_admin_page_entity_base_field_info_alter(&$fields, EntityTypeInterface $entity_type) {
+  if ($entity_type->id() == 'commerce_product') {
+
+    // Change the title field label.
+    $fields['title']->setLabel(t('Ticket name'));
+
+    // Changing Variation label.
+    $fields['variations']->setLabel(t('Ticket options'));
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function mit_admin_page_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+
+  // (Example assuming a view with an exposed filter on node title.)
+  // If the input for the title filter is a positive integer, filter against
+  // node ID instead of node title.
+  if ($view->id() == 'mitac_manage_content' && $view->current_display == 'page_1') {
+    // Getting value from.
+    $params = Drupal::request()->get('title');
+    $emptyRemoved = array_filter($params);
+
+    $date_array = explode(' - ', $create_date['min']);
+
+    // Traverse through the 'where' part of the query.
+    foreach ($query->where as &$condition_group) {
+      foreach ($condition_group['conditions'] as &$condition) {
+        // If this is the part of the query filtering on title, chang the
+        // condition to filter on node ID.
+        if (!empty($emptyRemoved)) {
+          if ($condition['field'] == 'node_field_data.title') {
+            $condition = [
+              'field' => 'node_field_data.nid',
+              'value' => $emptyRemoved,
+              'operator' => 'in',
+            ];
+          }
+        }
+        else {
+          if ($condition['field'] == 'node_field_data.title') {
+            $condition = [
+              'field' => 'node_field_data.nid',
+              'value' => 0,
+              'operator' => '!=',
+            ];
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for date.
+ */
+function _fix_max_date_submit_function($form, FormStateInterface $form_state) {
+  $date_filter = $form_state->getValue('created');
+  if (empty($date_filter)) {
+    return TRUE;
+  }
+  $date_array = explode(' - ', $date_filter['min']);
+
+  foreach ($date_filter as $value) {
+    $data['min'] = $date_array[0];
+    $data['max'] = $date_array[1];
+  };
+  $form_state->setValue('created', $data);
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function mit_admin_page_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'mit_admin_page/inputmask_lib';
+}
+
+/**
+ * Implements hook_inline_entity_form_table_fields_alter().
+ */
+function mit_admin_page_inline_entity_form_table_fields_alter(&$fields, $context) {
+
+  // Altering variation tables.
+  if ($context['entity_type'] == 'commerce_product_variation') {
+    $fields['label']['label'] = t("Ticket option");
+    $fields['on_hand'] = [
+      'type' => 'callback',
+      'label' => t('On hand'),
+      'weight' => 40,
+      'callback' => '_get_inventory',
+    ];
+
+    // Chaning publish and unpublish to yes or no.
+    $fields['status']['display_options']['settings']['format_custom_true'] = t("Yes");
+    $fields['status']['display_options']['settings']['format_custom_false'] = t("No");
+  }
+}
+
+/**
+ * Gets node created date.
+ */
+function _get_inventory($entity) {
+
+  // Calling service to get the available inventory.
+  $service = \Drupal::service("mit_inventory_management.inventory_validation")->validateInventory($entity->variation_id->value);
+  $invetory = empty($service[1]['inventory']) ? 0 : $service[1]['inventory'];
+  return $invetory;
+}
+
+/**
+ * Handler for the changing address label.
+ */
+function mit_admin_page_customize_address($element, $form_state) {
+  $element['address_line1']['#title'] = t("Address 1");
+  $element['address_line2']['#title'] = t("Address 2");
+  $element['administrative_area']['#prefix'] = "<div class = add-locality>";
+  $element['postal_code']['#suffix'] = "</div>";
+  return $element;
+}
+
+/**
+* Implements hook_theme().
+*/
+function mit_admin_page_theme($existing, $type, $theme, $path) {
+  return [
+    'mitac_lowinventory_count' => [
+      'variables' =>
+     [
+       'default_show' => NULL,
+       'readmore_show' => NULL,
+     ],
+    ],
+  ];
+}
